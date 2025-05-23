@@ -1,6 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
-import SessionCheck from '../SessionCheck'
-import LogoutButton from '../LogoutButton'
+import SessionCheck from '../components/SessionCheck'
+import LogoutButton from '../components/LogoutButton'
 
 export default async function HomePage() {
   const supabase = await createClient()
