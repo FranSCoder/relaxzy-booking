@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import DatepickerLocaleProvider from "./components/DatePickerLocaleProvider";
+import DatepickerLocaleProvider from "../components/DatePickerLocaleProvider";
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
