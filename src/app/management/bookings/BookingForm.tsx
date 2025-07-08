@@ -1,38 +1,57 @@
 'use client'
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { FormData } from "./FormData";
+import { createClient } from "@/utils/supabase/client";
 
 type DurationOption = {
   label: string;
   value: number;
 };
 
+type Therapist = {
+  id: string;
+  full_name: string;
+};
+
 const BookingForm = () => {
   const [formData, setFormData] = useState<FormData>({
-  name: "",
-  email: "",
-  phone: "",
-  service: "",
-  date: "",
-  time: "",
-  duration: "60",
-  therapist: "",
-});
+    name: "",
+    email: "",
+    phone: "",
+    service: "",
+    date: "",
+    time: "",
+    duration: "60",
+    therapist: "",
+  });
+  const [therapists, setTherapists] = useState<Therapist[]>([]);
+
+  useEffect(() => {
+    const fetchTherapists = async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("therapists")
+        .select("id, full_name")
+        .order("full_name", { ascending: true });
+
+      if (error) {
+        console.error("Error fetching therapists:", error.message);
+      } else if (data) {
+        setTherapists(data);
+      }
+    };
+
+    fetchTherapists();
+  }, []);
 
   const services = [
     "Traditional Thai Massage",
     "Oil Thai Massage",
     "Relaxzy Massage",
     "Foot & Leg Massage",
-  ];
-
-  const therapists = [
-    { id: "therapist1", name: "Chalida" },
-    { id: "therapist2", name: "Wiw" },
-    { id: "therapist3", name: "Phen" },
   ];
 
   const durationOptions: DurationOption[] = [
@@ -197,7 +216,7 @@ const BookingForm = () => {
         <option value="">Assign Automatically</option>
         {therapists.map((t) => (
           <option key={t.id} value={t.id}>
-            {t.name}
+            {t.full_name}
           </option>
         ))}
       </select>

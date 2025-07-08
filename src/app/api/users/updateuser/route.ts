@@ -3,7 +3,7 @@ import { createAdminClient  } from "@/utils/supabase/admin";
 
 export async function GET() {
     try {
-        const supabase = await createAdminClient();
+        const supabase = createAdminClient();
 
         const response = await supabase.auth.admin.updateUserById(
             "02b45b68-dba4-4a11-953e-a518e636d6b3",

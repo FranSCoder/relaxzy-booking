@@ -11,7 +11,7 @@ export async function GET() {
 
   if (!user || user.user_metadata?.role !== "supabase_admin") {
     console.log("Unauthorized user:", user?.email ?? "No user");
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: "Unauthorized manual" }, { status: 401 });
   }
 
   // 2. Usar el client de administrador para listar usuarios
