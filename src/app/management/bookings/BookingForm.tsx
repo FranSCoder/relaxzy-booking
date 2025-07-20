@@ -1,234 +1,353 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { FormData } from "./FormData";
 import { createClient } from "@/utils/supabase/client";
+import debounce from "lodash.debounce";
+import { FormData } from "./FormData";
 
-type DurationOption = {
-  label: string;
-  value: number;
-};
+type DurationOption = { label: string; value: number };
+type Therapist = { id: string; full_name: string };
+type Service = { id: string; name: string };
+type Client = { id: string; full_name: string; email: string; phone: string };
 
-type Therapist = {
-  id: string;
-  full_name: string;
-};
+const BookingPage = () => {
+    const supabase = createClient();
 
-const BookingForm = () => {
-  const [formData, setFormData] = useState<FormData>({
-    name: "",
-    email: "",
-    phone: "",
-    service: "",
-    date: "",
-    time: "",
-    duration: "60",
-    therapist: "",
-  });
-  const [therapists, setTherapists] = useState<Therapist[]>([]);
-
-  useEffect(() => {
-    const fetchTherapists = async () => {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from("therapists")
-        .select("id, full_name")
-        .order("full_name", { ascending: true });
-
-      if (error) {
-        console.error("Error fetching therapists:", error.message);
-      } else if (data) {
-        setTherapists(data);
-      }
+    const roundToNearest5Minutes = (date: Date) => {
+        const minutes = 5;
+        const ms = 1000 * 60 * minutes;
+        return new Date(Math.round(date.getTime() / ms) * ms);
     };
 
-    fetchTherapists();
-  }, []);
+    const now = new Date();
+    const roundedTime = roundToNearest5Minutes(now);
 
-  const services = [
-    "Traditional Thai Massage",
-    "Oil Thai Massage",
-    "Relaxzy Massage",
-    "Foot & Leg Massage",
-  ];
+    const parseDate = (str: string) => (str ? new Date(str) : null);
+    const parseDateTime = (date: string, time: string) => {
+        if (!date || !time) return null;
+        const dateTimeString = `${date}T${time}`;
+        const parsed = new Date(dateTimeString);
+        return isNaN(parsed.getTime()) ? null : parsed;
+    };
 
-  const durationOptions: DurationOption[] = [
-    { label: "30m", value: 30 },
-    { label: "45m", value: 45 },
-    { label: "1h", value: 60 },
-    { label: "1h15m", value: 75 },
-    { label: "1h30m", value: 90 },
-    { label: "1h45m", value: 105 },
-    { label: "2h", value: 120 },
-  ];
+    const formatDate = (date: Date | null) =>
+        date ? date.toISOString().split("T")[0] : "";
+    const formatTime = (date: Date | null) =>
+        date ? date.toTimeString().split(":").slice(0, 2).join(":") : "";
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
+    const [formData, setFormData] = useState<FormData>({
+        name: "",
+        email: "",
+        phone: "",
+        service: "",
+        date: formatDate(now),
+        time: formatTime(roundedTime),
+        duration: "60",
+        therapist: "",
+    });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Booking submitted:", formData);
-    // Add Supabase logic here
-  };
+    const [therapists, setTherapists] = useState<Therapist[]>([]);
+    const [services, setServices] = useState<Service[]>([]);
+    const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
 
-  const parseDateTime = (date: string, time: string) => {
-    if (!date || !time) return null;
-    const dateTimeString = `${date}T${time}`;
-    const parsed = new Date(dateTimeString);
-    return isNaN(parsed.getTime()) ? null : parsed;
-  };
+    const [searchTerm, setSearchTerm] = useState("");
+    const [searchResults, setSearchResults] = useState<Client[]>([]);
+    const [isSearching, setIsSearching] = useState(false);
 
-  const parseDate = (str: string) => (str ? new Date(str) : null);
-  const formatDate = (date: Date | null) =>
-    date ? date.toISOString().split("T")[0] : "";
-  const formatTime = (date: Date | null) =>
-    date ? date.toTimeString().split(":").slice(0, 2).join(":") : "";
+    // fetch data
+    useEffect(() => {
+        const fetchData = async () => {
+            const [tRes, sRes] = await Promise.all([
+                supabase
+                    .from("therapists")
+                    .select("id, full_name")
+                    .order("full_name", { ascending: true }),
+                supabase
+                    .from("services")
+                    .select("id, name")
+                    .order("name", { ascending: false }),
+            ]);
 
-  return (
-    <form onSubmit={handleSubmit} className="max-w-xl mx-auto p-4 rounded-2xl shadow-lg space-y-4">
-      <h2 className="text-2xl font-bold">New Booking</h2>
-
-      <input
-        name="name"
-        value={formData.name}
-        onChange={handleChange}
-        placeholder="Customer Name"
-        className="w-full p-2 border rounded-xl"
-        required
-      />
-
-      <input
-        type="email"
-        name="email"
-        value={formData.email}
-        onChange={handleChange}
-        placeholder="Email Address"
-        className="w-full p-2 border rounded-xl"
-      />
-
-      <input
-        type="tel"
-        name="phone"
-        value={formData.phone}
-        onChange={handleChange}
-        placeholder="Phone Number"
-        className="w-full p-2 border rounded-xl"
-        required
-      />
-
-      <select
-        name="service"
-        value={formData.service}
-        onChange={handleChange}
-        className="w-full p-2 border rounded-xl dark:bg-neutral-950"
-        required
-      >
-        <option value="">Select Service</option>
-        {services.map((service) => (
-          <option key={service} value={service}>
-            {service}
-          </option>
-        ))}
-      </select>
-
-      {/* Date & Time Picker */}
-      <div className="flex gap-2">
-        {/* Date Picker */}
-        <div className="relative w-1/2">
-          <DatePicker
-            selected={parseDate(formData.date)}
-            onChange={(date: Date | null) =>
-              setFormData((prev) => ({
-                ...prev,
-                date: formatDate(date),
-              }))
+            if (!tRes.error && tRes.data) {
+              setTherapists(tRes.data);
+              setFormData((prev) => ({ ...prev, therapist: tRes.data[0].full_name}));
+            } ;
+            if (!sRes.error && sRes.data) {
+              setServices(sRes.data);
+              setFormData((prev) => ({ ...prev, service: sRes.data[0].name}));
             }
-            dateFormat="yyyy-MM-dd"
-            placeholderText="Select Date"
-            className="w-full p-2 pl-10 border rounded-xl bg-white text-black dark:bg-neutral-950 dark:text-white dark:border-gray-700"
-          />
-          <svg
-            className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500 dark:text-gray-300 pointer-events-none"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-        </div>
+        };
 
-        {/* Time Picker */}
-        <div className="relative w-1/2">
-          <DatePicker
-            selected={parseDateTime(formData.date, formData.time)}
-            onChange={(date: Date | null) =>
-              setFormData((prev) => ({
-                ...prev,
-                time: formatTime(date),
-              }))
+        fetchData();
+        
+    }, [supabase]);
+
+    const durationOptions: DurationOption[] = [
+        { label: "30m", value: 30 },
+        { label: "45m", value: 45 },
+        { label: "1h", value: 60 },
+        { label: "1h15m", value: 75 },
+        { label: "1h30m", value: 90 },
+        { label: "1h45m", value: 105 },
+        { label: "2h", value: 120 },
+    ];
+
+    const handleChange = (
+        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    ) => {
+        const { name, value } = e.target;
+        setFormData((prev) => ({ ...prev, [name]: value }));
+    };
+
+    const handleSelectCustomer = (client: Client) => {
+        setFormData((prev) => ({
+            ...prev,
+            name: client.full_name || "",
+            email: client.email || "",
+            phone: client.phone || "",
+        }));
+        setSelectedClientId(client.id);
+        setSearchTerm("");
+        setSearchResults([]);
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        const startDateTimeStr = `${formData.date}T${formData.time}`;
+        const startDateTime = new Date(startDateTimeStr);
+        if (isNaN(startDateTime.getTime())) {
+            alert("Invalid date or time");
+            return;
+        }
+
+        const endDateTime = new Date(
+            startDateTime.getTime() + parseInt(formData.duration) * 60000
+        );
+
+        const selectedService = services.find(
+            (s) => s.name === formData.service
+        );
+        if (!selectedService) {
+            alert("Invalid service selected");
+            return;
+        }
+
+        const selectedTherapist = therapists.find(
+            (t) => t.full_name === formData.therapist
+        );
+
+        const { error } = await supabase.from("bookings").insert([
+            {
+                client_id: selectedClientId, // <-- make sure you track & set this elsewhere
+                therapist_id: selectedTherapist?.id || null,
+                service_id: selectedService.id,
+                start_time: startDateTime.toISOString(),
+                end_time: endDateTime.toISOString(),
+                notes: "", // optional
+                status: "confirmed", // or whatever default
+            },
+        ]);
+
+        if (error) {
+            console.error(error);
+            alert("Failed to create booking");
+        } else {
+            alert("Booking created!");
+            // optionally reset form
+        }
+    };
+
+    // Fuzzy search
+    const debouncedSearch = useRef(
+        debounce(async (text: string) => {
+            if (!text) {
+                setSearchResults([]);
+                setIsSearching(false);
+                return;
             }
-            showTimeSelect
-            showTimeSelectOnly
-            timeIntervals={5}
-            timeCaption="Time"
-            dateFormat="HH:mm"
-            placeholderText="Select Time"
-            className="w-full p-2 pl-10 border rounded-xl bg-white text-black dark:bg-neutral-950 dark:text-white dark:border-gray-700"
-          />
-          <svg
-            className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500 dark:text-gray-300 pointer-events-none"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
+
+            const { data, error } = await supabase.rpc("search_clients_fuzzy", {
+                search_term: text,
+            });
+
+            if (!error && data) {
+                setSearchResults(data.slice(0, 3));
+                setIsSearching(true);
+            } else {
+                console.error(error);
+            }
+        }, 300)
+    ).current;
+
+    const handleSearch = (text: string) => {
+        setSearchTerm(text);
+        debouncedSearch(text);
+    };
+
+    return (
+        <div className="flex flex-col justify-center md:flex-row gap-6 p-4">
+            {/* Left: Booking Form */}
+            <form
+                onSubmit={handleSubmit}
+                className="flex-1 max-w-xl p-4 rounded-2xl shadow-lg space-y-4 bg-white dark:bg-neutral-900">
+                <h2 className="text-2xl font-bold">New Booking</h2>
+
+                <input
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    placeholder="Customer Name"
+                    className="w-full p-2 border rounded-xl"
+                    required
+                />
+                <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    placeholder="Email Address"
+                    className="w-full p-2 border rounded-xl"
+                />
+                <div className="flex gap-2">
+                    <input
+                        type="tel"
+                        name="phone"
+                        value={formData.phone}
+                        onChange={handleChange}
+                        placeholder="Phone Number"
+                        className="w-1/2 p-2 border rounded-xl"
+                        required
+                    />
+
+                    <select
+                        name="service"
+                        value={formData.service}
+                        onChange={handleChange}
+                        className="w-1/2 p-2 border rounded-xl dark:bg-neutral-900"
+                        required>
+                        {services.map((s) => (
+                            <option key={s.id} value={s.name}>
+                                {s.name}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className="flex gap-2">
+                    <div className="relative w-1/2">
+                        <DatePicker
+                            selected={parseDate(formData.date)}
+                            onChange={(date: Date | null) =>
+                                setFormData((prev) => ({
+                                    ...prev,
+                                    date: formatDate(date),
+                                }))
+                            }
+                            dateFormat="dd/MM/yyyy"
+                            placeholderText="Select Date"
+                            className="min-w-full p-2 border rounded-xl"
+                        />
+                    </div>
+
+                    <div className="relative w-1/2">
+                        <DatePicker
+                            selected={parseDateTime(
+                                formData.date,
+                                formData.time
+                            )}
+                            onChange={(date: Date | null) =>
+                                setFormData((prev) => ({
+                                    ...prev,
+                                    time: formatTime(date),
+                                }))
+                            }
+                            showTimeSelect
+                            showTimeSelectOnly
+                            timeIntervals={5}
+                            timeCaption="Time"
+                            dateFormat="HH:mm"
+                            placeholderText="Select Time"
+                            className="w-full p-2 border rounded-xl"
+                        />
+                    </div>
+                </div>
+
+                <div className="flex gap-2">
+                    <select
+                        name="duration"
+                        value={formData.duration}
+                        onChange={handleChange}
+                        className="w-1/2 p-2 border rounded-xl dark:bg-neutral-900"
+                        required>
+                        <option value="">Select Duration</option>
+                        {durationOptions.map(({ label, value }) => (
+                            <option key={value} value={value}>
+                                {label}
+                            </option>
+                        ))}
+                    </select>
+
+                    <select
+                        name="therapist"
+                        value={formData.therapist}
+                        onChange={handleChange}
+                        className="w-1/2 p-2 border rounded-xl dark:bg-neutral-900">
+                        {therapists.map((t) => (
+                            <option key={t.id} value={t.full_name}>
+                                {t.full_name}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                <button
+                    type="submit"
+                    className="w-full bg-green-600 text-white py-2 rounded-xl hover:bg-green-700 transition">
+                    Add Booking
+                </button>
+            </form>
+
+            {/* Right: Find Existing Customer */}
+            <div className="w-full md:w-1/3 p-4 rounded-2xl shadow-lg bg-white dark:bg-neutral-900">
+                <h2 className="text-xl font-bold mb-2">
+                    Find Existing Customer
+                </h2>
+
+                <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => handleSearch(e.target.value)}
+                    placeholder="Search customers..."
+                    className="w-full p-2 mb-4 border rounded-xl"
+                />
+
+                {isSearching && searchResults.length > 0 && (
+                    <div className="space-y-2">
+                        {searchResults.map((client) => (
+                            <button
+                                type="button"
+                                key={client.id}
+                                onClick={() => handleSelectCustomer(client)}
+                                className="w-full text-left p-2 border rounded-xl bg-gray-50 dark:bg-neutral-800 hover:bg-gray-100 dark:hover:bg-neutral-700 transition">
+                                <div className="font-semibold">
+                                    {client.full_name}
+                                </div>
+                                <div className="text-sm">{client.email}</div>
+                                <div className="text-sm">{client.phone}</div>
+                            </button>
+                        ))}
+                    </div>
+                )}
+
+                {isSearching && searchResults.length === 0 && (
+                    <p>No customers found.</p>
+                )}
+            </div>
         </div>
-      </div>
-
-      <select
-        name="duration"
-        value={formData.duration}
-        onChange={handleChange}
-        className="w-full p-2 border rounded-xl dark:bg-neutral-950"
-        required
-      >
-        <option value="">Select Duration</option>
-        {durationOptions.map(({ label, value }) => (
-          <option key={value} value={value}>
-            {label}
-          </option>
-        ))}
-      </select>
-
-      <select
-        name="therapist"
-        value={formData.therapist}
-        onChange={handleChange}
-        className="w-full p-2 border rounded-xl dark:bg-neutral-950"
-      >
-        <option value="">Assign Automatically</option>
-        {therapists.map((t) => (
-          <option key={t.id} value={t.id}>
-            {t.full_name}
-          </option>
-        ))}
-      </select>
-
-      <button
-        type="submit"
-        className="w-full bg-green-600 text-white py-2 rounded-xl hover:bg-green-700 transition"
-      >
-        Add Booking
-      </button>
-    </form>
-  );
+    );
 };
 
-export default BookingForm;
+export default BookingPage;
