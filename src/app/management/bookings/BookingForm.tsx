@@ -5,12 +5,21 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { createClient } from "@/utils/supabase/client";
 import debounce from "lodash.debounce";
-import { FormData } from "./FormData";
 
 type DurationOption = { label: string; value: number };
 type Therapist = { id: string; full_name: string };
 type Service = { id: string; name: string };
 type Client = { id: string; full_name: string; email: string; phone: string };
+type FormData = {
+    name: string;
+    email: string;
+    phone: string;
+    service: string;
+    date: string;
+    time: string;
+    duration: string;
+    therapist: string;
+};
 
 const BookingPage = () => {
     const supabase = createClient();
@@ -20,10 +29,6 @@ const BookingPage = () => {
         const ms = 1000 * 60 * minutes;
         return new Date(Math.round(date.getTime() / ms) * ms);
     };
-
-    const now = new Date();
-    const roundedTime = roundToNearest5Minutes(now);
-
     const parseDate = (str: string) => (str ? new Date(str) : null);
     const parseDateTime = (date: string, time: string) => {
         if (!date || !time) return null;
@@ -31,27 +36,36 @@ const BookingPage = () => {
         const parsed = new Date(dateTimeString);
         return isNaN(parsed.getTime()) ? null : parsed;
     };
-
     const formatDate = (date: Date | null) =>
         date ? date.toISOString().split("T")[0] : "";
     const formatTime = (date: Date | null) =>
         date ? date.toTimeString().split(":").slice(0, 2).join(":") : "";
+
+    const durationOptions: DurationOption[] = [
+        { label: "30m", value: 30 },
+        { label: "45m", value: 45 },
+        { label: "1h", value: 60 },
+        { label: "1h15m", value: 75 },
+        { label: "1h30m", value: 90 },
+        { label: "1h45m", value: 105 },
+        { label: "2h", value: 120 },
+    ];
+    const now = new Date();
+    const roundedTime = roundToNearest5Minutes(now);
 
     const [formData, setFormData] = useState<FormData>({
         name: "",
         email: "",
         phone: "",
         service: "",
-        date: formatDate(now),
+        date: formatDate(roundedTime),
         time: formatTime(roundedTime),
         duration: "60",
         therapist: "",
     });
-
     const [therapists, setTherapists] = useState<Therapist[]>([]);
     const [services, setServices] = useState<Service[]>([]);
     const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
-
     const [searchTerm, setSearchTerm] = useState("");
     const [searchResults, setSearchResults] = useState<Client[]>([]);
     const [isSearching, setIsSearching] = useState(false);
@@ -83,16 +97,6 @@ const BookingPage = () => {
         fetchData();
         
     }, [supabase]);
-
-    const durationOptions: DurationOption[] = [
-        { label: "30m", value: 30 },
-        { label: "45m", value: 45 },
-        { label: "1h", value: 60 },
-        { label: "1h15m", value: 75 },
-        { label: "1h30m", value: 90 },
-        { label: "1h45m", value: 105 },
-        { label: "2h", value: 120 },
-    ];
 
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
