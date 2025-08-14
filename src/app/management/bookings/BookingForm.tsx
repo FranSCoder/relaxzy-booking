@@ -7,7 +7,6 @@ import { createClient } from "@/utils/supabase/client";
 import debounce from "lodash.debounce";
 
 type DurationOption = { label: string; value: number };
-type Therapist = { id: string; full_name: string };
 type Service = { id: string; name: string };
 type Client = { id: string; full_name: string; email: string; phone: string };
 type FormData = {
@@ -18,10 +17,9 @@ type FormData = {
     date: string;
     time: string;
     duration: string;
-    therapist: string;
 };
 
-const BookingPage = () => {
+const BookingForm = () => {
     const supabase = createClient();
 
     const roundUpToNext5Minutes = (date: Date) => {
@@ -68,9 +66,7 @@ const BookingPage = () => {
         date: formatDate(roundedTime),
         time: formatTime(roundedTime),
         duration: "60",
-        therapist: "",
     });
-    const [therapists, setTherapists] = useState<Therapist[]>([]);
     const [services, setServices] = useState<Service[]>([]);
     const [selectedClientId, setSelectedClientId] = useState<string | null>(
         null
@@ -85,24 +81,11 @@ const BookingPage = () => {
     // fetch data
     useEffect(() => {
         const fetchData = async () => {
-            const [tRes, sRes] = await Promise.all([
-                supabase
-                    .from("therapists")
-                    .select("id, full_name")
-                    .order("full_name", { ascending: true }),
-                supabase
+            const sRes = await supabase
                     .from("services")
                     .select("id, name")
-                    .order("name", { ascending: false }),
-            ]);
+                    .order("name", { ascending: false });
 
-            if (!tRes.error && tRes.data) {
-                setTherapists(tRes.data);
-                setFormData((prev) => ({
-                    ...prev,
-                    therapist: tRes.data[0].full_name,
-                }));
-            }
             if (!sRes.error && sRes.data) {
                 setServices(sRes.data);
                 setFormData((prev) => ({
@@ -147,7 +130,6 @@ const BookingPage = () => {
             date: formatDate(roundedTime),
             time: formatTime(roundedTime),
             duration: "60",
-            therapist: "",
         });
         if (!isCreatingBooking && !isCreatingCustomer) {
             focusSearchCustomers.current!.focus();
@@ -212,14 +194,9 @@ const BookingPage = () => {
             return;
         }
 
-        const selectedTherapist = therapists.find(
-            (t) => t.full_name === formData.therapist
-        );
-
         const { error } = await supabase.from("bookings").insert([
             {
                 client_id: selectedClientId,
-                therapist_id: selectedTherapist?.id || null,
                 service_id: selectedService.id,
                 start_time: startDateTime.toISOString(),
                 end_time: endDateTime.toISOString(),
@@ -241,7 +218,6 @@ const BookingPage = () => {
                 date: formatDate(new Date()),
                 time: formatTime(roundUpToNext5Minutes(new Date())),
                 duration: "60",
-                therapist: "",
             });
         }
 
@@ -492,4 +468,4 @@ const BookingPage = () => {
     );
 };
 
-export default BookingPage;
+export default BookingForm;
