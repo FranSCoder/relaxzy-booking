@@ -82,9 +82,9 @@ const BookingForm = () => {
     useEffect(() => {
         const fetchData = async () => {
             const sRes = await supabase
-                    .from("services")
-                    .select("id, name")
-                    .order("name", { ascending: false });
+                .from("services")
+                .select("id, name")
+                .order("name", { ascending: false });
 
             if (!sRes.error && sRes.data) {
                 setServices(sRes.data);
@@ -180,8 +180,6 @@ const BookingForm = () => {
             }
         }
 
-        setIsSubmitting(true);
-
         const endDateTime = new Date(
             startDateTime.getTime() + parseInt(formData.duration) * 60000
         );
@@ -194,9 +192,86 @@ const BookingForm = () => {
             return;
         }
 
+        if (isCreatingCustomer && !formData.name) {
+            alert("Customer name is required");
+            return;
+        }
+
+        if (isCreatingCustomer && (!formData.email || !formData.phone)) {
+            alert("Email or phone number are required for new customers");
+            return;
+        }
+
+        let clientIdToUse = selectedClientId;
+
+        if (isCreatingCustomer) {
+            // 1. Check for existing client by email or phone
+            const { data: existingClients, error: clientSearchError } = await supabase
+                .from("clients")
+                .select("id, full_name, email, phone")
+                .or(`email.eq.${formData.email},phone.eq.${formData.phone}`);
+
+            if (clientSearchError) {
+                alert("Error searching for existing client");
+                setIsSubmitting(false);
+                return;
+            }
+
+            if (existingClients && existingClients.length > 0) {
+                // If email or phone matches, do not create, use that client
+                alert("A customer with this email or phone already exists. Please use the search to select them.");
+                setIsSubmitting(false);
+                return;
+            }
+
+            // 2. Check for name-only match
+            const { data: nameMatches, error: nameSearchError } = await supabase
+                .from("clients")
+                .select("id, full_name, email, phone")
+                .eq("full_name", formData.name);
+
+            if (nameSearchError) {
+                alert("Error searching for name matches");
+                setIsSubmitting(false);
+                return;
+            }
+
+            if (nameMatches && nameMatches.length > 0) {
+                const proceed = window.confirm(
+                    `A customer with the same name already exists.\nName: ${formData.name}\nEmail: ${nameMatches[0].email}\nPhone: ${nameMatches[0].phone}\nDo you want to continue creating a new customer?`
+                );
+                if (!proceed) {
+                    setIsSubmitting(false);
+                    return;
+                }
+            }
+
+            // 3. Create the new client
+            const { data: newClient, error: createClientError } = await supabase
+                .from("clients")
+                .insert([
+                    {
+                        full_name: formData.name,
+                        email: formData.email,
+                        phone: formData.phone,
+                    },
+                ])
+                .select("id")
+                .single();
+
+            if (createClientError || !newClient) {
+                alert("Failed to create new customer");
+                setIsSubmitting(false);
+                return;
+            }
+            clientIdToUse = newClient.id;
+        }
+
+        setIsSubmitting(true);
+
         const { error } = await supabase.from("bookings").insert([
             {
-                client_id: selectedClientId,
+                client_id: clientIdToUse,
                 service_id: selectedService.id,
                 start_time: startDateTime.toISOString(),
                 end_time: endDateTime.toISOString(),
@@ -303,7 +378,7 @@ const BookingForm = () => {
                             ref={focusCustomerName}
                             value={formData.name}
                             onChange={handleChange}
-                            placeholder="Customer Name"
+                            placeholder="Customer Name (*)"
                             disabled={!isCreatingCustomer}
                             className={`focus:outline-none focus:ring-0 w-full p-2 border rounded-xl transition ${
                                 isCreatingCustomer

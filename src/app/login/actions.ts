@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
-import { cookies } from "next/headers";
 
 export async function login(formData: FormData) {
     const supabase = await createClient();
@@ -18,15 +17,14 @@ export async function login(formData: FormData) {
     const { error } = await supabase.auth.signInWithPassword(data);
 
     if (error) {
-        redirect("/error");
+        redirect(`/error?msg=${encodeURIComponent(error.message)}`);
     }
 
-    revalidatePath("/", "layout");
+    revalidatePath("/");
     redirect("/");
 }
 
 export async function signup(formData: FormData) {
-    const cookieStore = await cookies();
     const supabase = await createClient();
 
     // type-casting here for convenience
@@ -36,17 +34,16 @@ export async function signup(formData: FormData) {
         password: formData.get("password") as string,
         options: {
             data: {
-                role: "client"
-            }
-        }
+                role: "client",
+            },
+        },
     };
 
     const response = await supabase.auth.signUp(data);
     console.log(response);
 
     if (response.error) {
-        cookieStore.set("errorSignUp", response.error.message);
-        redirect("/error");
+        redirect(`/error?msg=${encodeURIComponent(response.error.message)}`);
     }
 
     revalidatePath("/", "layout");
