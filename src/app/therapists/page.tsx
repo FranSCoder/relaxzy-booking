@@ -1,4 +1,4 @@
-import AddTherapistForm from '@/app/(protected)/admin/AddTherapistForm'
+import AddTherapistForm from '@/app/therapists/AddTherapistForm'
 import TherapistList from './TherapistList'
 
 export default async function HomePage() {

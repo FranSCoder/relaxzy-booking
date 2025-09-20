@@ -13,7 +13,6 @@ Settings.defaultZone = "Europe/Madrid";
 const localizer = luxonLocalizer(DateTime, { firstDayOfWeek: 1 });
 
 export default function CalendarUI() {
-
     const useCustomCalendar = () => {
         const [view, setView] = useState<View>("week");
         const [date, setDate] = useState<Date>(new Date());
@@ -57,6 +56,7 @@ export default function CalendarUI() {
                 .from("bookings_with_details")
                 .select("*");
             if (!error && data) {
+                console.log("Fetched bookings:", data);
                 setBookings(data);
             } else if (error) {
                 console.error("Error fetching bookings:", error.message);
@@ -106,6 +106,15 @@ export default function CalendarUI() {
                         min={min} // 10:00
                         max={max} // 22:00
                         dayPropGetter={dayPropGetter}
+                        eventPropGetter={(event) => ({
+                            style: {
+                                backgroundColor: "rgba(4, 62, 0, 1)",
+                                color: "white",
+                                borderRadius: "8px",
+                                border: "1.5px solid #FF8C00",
+                                padding: "4px",
+                            },
+                        })}
                         view={view}
                         onView={onView}
                         onNavigate={onNavigate}

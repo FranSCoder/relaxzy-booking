@@ -1,8 +1,9 @@
 // /scripts/importBookings.js
-import 'dotenv/config';
+import "dotenv/config";
 import fs from "fs";
 import path from "path";
 import { createClient } from "@supabase/supabase-js";
+import { parsePhoneNumberFromString } from "libphonenumber-js";
 
 // Supabase client
 const supabase = createClient(
@@ -16,9 +17,18 @@ const jsonData = JSON.parse(fs.readFileSync(filePath, "utf-8"));
 
 // Map short month to number
 const MONTHS = {
-    JAN: "01", FEB: "02", MAR: "03", APR: "04",
-    MAY: "05", JUN: "06", JUL: "07", AUG: "08",
-    SEP: "09", OCT: "10", NOV: "11", DEC: "12"
+    JAN: "01",
+    FEB: "02",
+    MAR: "03",
+    APR: "04",
+    MAY: "05",
+    JUN: "06",
+    JUL: "07",
+    AUG: "08",
+    SEP: "09",
+    OCT: "10",
+    NOV: "11",
+    DEC: "12",
 };
 
 function parseDate(row) {
@@ -44,11 +54,16 @@ function parseDuration(durationStr) {
     return { duration: parseNumber(durationStr), multiplier: 1 };
 }
 
-async function resolveServiceName(
-    dbServiceName,
-    duration,
-    pricePerPerson,
-) {
+function validatePhone(phone, defaultCountry = "ES") {
+    if (!phone) return null;
+    const number = parsePhoneNumberFromString(phone, defaultCountry);
+    if (!number || !number.isValid()) {
+        throw new Error("Invalid phone number in script validation", phone);
+    }
+    return number.format("E.164");
+}
+
+async function resolveServiceName(dbServiceName, duration, pricePerPerson) {
     // if service already provided, trust it
     if (dbServiceName && dbServiceName.trim() !== "") {
         return dbServiceName;
@@ -65,7 +80,9 @@ async function resolveServiceName(
     }
 
     if (!services || services.length === 0) {
-        console.warn(`No services in DB. Price: ${pricePerPerson}, Duration: ${duration}`);
+        console.warn(
+            `No services in DB. Price: ${pricePerPerson}, Duration: ${duration}`
+        );
         // fallback default if known case
         if (pricePerPerson === 50 && duration === 60) {
             return "Relaxzy";
@@ -76,11 +93,14 @@ async function resolveServiceName(
     // look for a matching service
     const serviceMatch = services.find((s) => {
         try {
-
             const arr = JSON.parse(s.standard_duration_prices);
-            console.log(`Standard duration prices for ${s.name}:, ${arr}. Looking for duration: ${duration}, pricePerPerson: ${pricePerPerson}`);
+            console.log(
+                `Standard duration prices for ${s.name}:, ${arr}. Looking for duration: ${duration}, pricePerPerson: ${pricePerPerson}`
+            );
             return arr.some(
-                (p) => p.duration === duration && parseNumber(p.price) === pricePerPerson
+                (p) =>
+                    p.duration === duration &&
+                    parseNumber(p.price) === pricePerPerson
             );
         } catch {
             return false;
@@ -92,7 +112,12 @@ async function resolveServiceName(
     }
 
     // fallback if no service matched
-    if (pricePerPerson === 50 || duration === 60 || pricePerPerson === 45 || duration === 45) {
+    if (
+        pricePerPerson === 50 ||
+        duration === 60 ||
+        pricePerPerson === 45 ||
+        duration === 45
+    ) {
         console.warn("Fallback: matched old Relaxzy booking.");
         return "Relaxzy";
     }
@@ -112,12 +137,17 @@ async function importBookings() {
             // --- CLIENT ---
             let clientId = null;
             if (row.Name || row.Phone) {
-                let { data: client, error } = row.Phone
+
+                if (row.Phone) {
+                    row.Phone = validatePhone(String(row.Phone));
+                }
+
+                let { data: client } = row.Phone
                     ? await supabase
-                        .from("clients")
-                        .select("id")
-                        .eq("phone", row.Phone)
-                        .single()
+                          .from("clients")
+                          .select("id")
+                          .eq("phone", row.Phone)
+                          .single()
                     : { data: null, error: null };
 
                 if (!client && row.Name) {
@@ -130,23 +160,54 @@ async function importBookings() {
                     if (nameMatch) {
                         client = nameMatch;
                         if (!nameMatch.phone && row.Phone) {
-                            await supabase
-                                .from("clients")
-                                .update({ phone: row.Phone })
-                                .eq("id", nameMatch.id);
+                            const { data: updated, error: updateError } =
+                                await supabase
+                                    .from("clients")
+                                    .update({ phone: row.Phone })
+                                    .eq("id", nameMatch.id);
+
+                            if (updated) {
+                                console.log("Updated client phone:", updated);
+                            }
+                            if (updateError) {
+                                console.error(
+                                    "Error updating client phone in Supabase:",
+                                    updateError
+                                );
+                                throw new Error(
+                                    "Invalid phone number in Supabase",
+                                    updateError
+                                );
+                            }
                         }
                     }
                 }
 
                 if (!client) {
-                    const { data: inserted } = await supabase
-                        .from("clients")
-                        .insert({
-                            full_name: row.Name || null,
-                            phone: row.Phone || null,
-                        })
-                        .select("id")
-                        .single();
+                    const { data: inserted, error: insertError } =
+                        await supabase
+                            .from("clients")
+                            .insert({
+                                full_name: row.Name || null,
+                                phone: row.Phone || null,
+                            })
+                            .select("id")
+                            .single();
+
+                    if (inserted) {
+                        console.log("Inserted new client:", inserted);
+                    }
+                    if (insertError) {
+                        console.error(
+                            "Error inserting new client in Supabase:",
+                            insertError
+                        );
+                        throw new Error(
+                            "Invalid phone number in Supabase",
+                            insertError
+                        );
+                    }
+
                     client = inserted;
                 }
                 clientId = client?.id ?? null;
@@ -161,12 +222,18 @@ async function importBookings() {
                 BS: "Back & Shoulders",
                 DT: "Deep Tissue",
             };
-            let dbServiceName = row.Massage ? (serviceMap[row.Massage] || row.Massage) : null;
+            let dbServiceName = row.Massage
+                ? serviceMap[row.Massage] || row.Massage
+                : null;
 
             const { duration, multiplier } = parseDuration(row.Duration);
             const pricePerPerson = (parseNumber(row.Price) || 0) / multiplier;
 
-            dbServiceName = await resolveServiceName(dbServiceName, duration, pricePerPerson);
+            dbServiceName = await resolveServiceName(
+                dbServiceName,
+                duration,
+                pricePerPerson
+            );
 
             const { data: service, error: serviceError } = await supabase
                 .from("services")
@@ -175,7 +242,10 @@ async function importBookings() {
                 .single();
 
             if (serviceError || !service) {
-                console.error("❌ Service not found:", { dbServiceName, serviceError });
+                console.error("❌ Service not found:", {
+                    dbServiceName,
+                    serviceError,
+                });
                 continue; // skip this row
             }
 
@@ -190,79 +260,134 @@ async function importBookings() {
             // --- BOOKINGS & PAYMENTS ---
             for (let i = 0; i < multiplier; i++) {
                 const bookingClientId = i === 0 ? clientId : null;
+                const comments = row.Comments ? String(row.Comments).trim() : null;
 
-                const { data: bookingData, error: bookingError } = await supabase
-                    .from("bookings")
-                    .upsert(
-                        [{
-                            client_id: bookingClientId,
-                            service_id: serviceId,
-                            start_time: startDate.toISOString(),
-                            end_time: endDate.toISOString(),
-                            notes: i === 0 ? row.Comments || null : null,
-                            status: "confirmed"
-                        }],
-                        {
-                            onConflict: 'client_id,service_id,start_time'
-                        }
-                    )
-                    .select()
-                    .maybeSingle();  // ✅ always return row if exists
+                const bookingInfo = {
+                    client_id: bookingClientId,
+                    service_id: serviceId,
+                    start_time: startDate.toISOString(),
+                    end_time: endDate.toISOString(),
+                    notes:
+                        i === 0
+                            ? [
+                                  comments,
+                                  row.TipT
+                                      ? "Propina en tarjeta " + row.TipT
+                                      : null,
+                              ]
+                                  .filter(Boolean)
+                                  .join(", ") || null
+                            : null,
+                    status: "completed",
+                };
 
+                const { data: bookingData, error: bookingError } =
+                    await supabase
+                        .from("bookings")
+                        .upsert([bookingInfo], {
+                            onConflict: "client_id,service_id,start_time",
+                        })
+                        .select()
+                        .maybeSingle(); // always return row if exists
 
                 if (bookingError) {
                     console.error("❌ Booking insert error:", bookingError);
+                    throw new Error(
+                        `Booking insert failed for: ${JSON.stringify(
+                            bookingInfo
+                        )} -> ${bookingError.message}`
+                    );
                 }
 
                 if (!bookingData || bookingData.length === 0) {
-                    console.warn("⚠️ No booking returned (likely duplicate, no changes):", {
-                        client_id: bookingClientId,
-                        service_id: serviceId,
-                        start_time: startDate.toISOString()
-                    });
+                    console.warn(
+                        "⚠️ No booking returned (likely duplicate, no changes):",
+                        {
+                            client_id: bookingClientId,
+                            service_id: serviceId,
+                            start_time: startDate.toISOString(),
+                        }
+                    );
                 }
 
                 console.log("Booking upsert result:", bookingData);
-                const booking = bookingData?.[0];
-                if (!booking) continue;
-                const bookingId = booking.id;
+                const bookingId = bookingData.id;
 
-                const cashPayment = (parseNumber(row.PaymentT) || 0) / multiplier;
-                const cardPayment = (parseNumber(row.PaymentE) || 0) / multiplier;
-                const cardTip = (parseNumber(row.TipE) || 0) / multiplier;
+                const cashPayment =
+                    (parseNumber(row.PaymentE) || 0) / multiplier;
+                const cardPayment =
+                    (parseNumber(row.PaymentT) || 0) / multiplier;
+                const cardTip = (parseNumber(row.TipT) || 0) / multiplier;
 
                 let payments = [];
-                if (cashPayment > 0) payments.push({ booking_id: bookingId, amount: cashPayment, method: "cash", paid_at: new Date().toISOString(), paid: true });
-                if (cardPayment > 0) payments.push({ booking_id: bookingId, amount: cardPayment + cardTip, method: "credit card", paid_at: new Date().toISOString(), paid: true });
-                else if (cardTip > 0) payments.push({ booking_id: bookingId, amount: cardTip, method: "credit card", paid_at: new Date().toISOString(), paid: true });
+                if (cashPayment > 0)
+                    payments.push({
+                        booking_id: bookingId,
+                        amount: cashPayment,
+                        method: "cash",
+                        paid_at: new Date().toISOString(),
+                        paid: true,
+                    });
+                if (cardPayment > 0)
+                    payments.push({
+                        booking_id: bookingId,
+                        amount: cardPayment + cardTip,
+                        method: "credit card",
+                        paid_at: new Date().toISOString(),
+                        paid: true,
+                    });
+                else if (cardTip > 0)
+                    payments.push({
+                        booking_id: bookingId,
+                        amount: cardTip,
+                        method: "credit card",
+                        paid_at: new Date().toISOString(),
+                        paid: true,
+                    });
 
                 for (const payment of payments) {
-                    const { data: paymentData, error: paymentError } = await supabase.from("payments").upsert([payment], { onConflict: 'booking_id,method' }).select();
+                    const { data: paymentData, error: paymentError } =
+                        await supabase
+                            .from("payments")
+                            .upsert([payment], {
+                                onConflict: "booking_id,method",
+                            })
+                            .select()
+                            .maybeSingle();
 
                     if (paymentError) {
                         console.error("❌ Payment insert error:", paymentError);
+                        throw new Error(
+                            `Payment insert failed for: ${payment}`
+                        );
                     }
 
                     if (!paymentData || paymentData.length === 0) {
-                        console.warn("⚠️ No payment returned (likely duplicate, no changes):", {
-                            payment: payment,
-                        });
+                        console.warn(
+                            "⚠️ No payment returned (likely duplicate, no changes):",
+                            {
+                                payment: payment,
+                            }
+                        );
                     }
 
                     console.log("Payment upsert result:", paymentData);
-                    const actualPayment = paymentData?.[0];
-                    if (!actualPayment) continue;
-                    const paymentId = actualPayment.id;
                 }
             }
 
-            console.log(`✅ Imported booking on ${startDate.toISOString()} (${row.Massage}) x${multiplier}`);
+            console.log(
+                `✅ Imported booking on ${startDate.toISOString()} (${
+                    row.Massage
+                }) x${multiplier}`
+            );
             console.log(`Imported ${count} of ${total}`);
         } catch (err) {
             console.error("❌ Error importing row:", row, err.message);
             failedRows.push({ row, error: err.message });
         } finally {
-            console.log("-----------------------------------------------------")
+            console.log(
+                "-----------------------------------------------------"
+            );
         }
     }
 
@@ -271,7 +396,11 @@ async function importBookings() {
     if (failedRows.length > 0) {
         console.log(`❌ ${failedRows.length} bookings failed to import:\n`);
         failedRows.forEach((f, idx) => {
-            console.log(`${idx + 1}. Massage: ${f.row.Massage}, Date: ${f.row.File}-${f.row.Sheet}, Error: ${f.error}`);
+            console.log(
+                `${idx + 1}. Massage: ${f.row.Massage}, Date: ${f.row.File}-${
+                    f.row.Sheet
+                }, Error: ${f.error}`
+            );
         });
     } else {
         console.log("✅ All bookings imported successfully!");
@@ -279,4 +408,3 @@ async function importBookings() {
 }
 
 importBookings();
-

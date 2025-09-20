@@ -41,7 +41,7 @@ async function importBookings() {
 
             if (row.Name || row.Phone) {
                 // Step 1: Try to find by phone (if given)
-                let { data: client, error } = row.Phone
+                let { data: client } = row.Phone
                     ? await supabase
                         .from("clients")
                         .select("id")
@@ -184,7 +184,6 @@ async function importBookings() {
                     .from("payments")
                     .upsert([payment], { onConflict: ["booking_id", "method"] })
                     .select("*");
-                const firstRow = data[0];
             }
 
             console.log(`✅ Imported booking on ${startDate.toISOString()} (${row.Massage})`);
