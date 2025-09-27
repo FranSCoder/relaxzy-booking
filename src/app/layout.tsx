@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import DatepickerLocaleProvider from "../components/DatePickerLocaleProvider";
-import { Header } from "@/components/Header";
+import LayoutContent from "@/components/LayoutContent";
+import { AppRouterCacheProvider } from "@mui/material-nextjs/v15-appRouter";
+import { Providers } from "@/components/Providers";
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
@@ -18,23 +20,26 @@ export const metadata: Metadata = {
     title: "Relaxzy Bookings",
     description: "Manage your Relaxzy bookings",
     icons: {
-        icon: "/favicon32.png", // path relative to public/
+        icon: "/favicon32.png",
     },
 };
 
 export default function RootLayout({
     children,
-}: Readonly<{
+}: {
     children: React.ReactNode;
-}>) {
+}) {
     return (
         <html lang="en">
             <body
                 className={`${geistSans.variable} ${geistMono.variable} antialiased`}
                 suppressHydrationWarning>
-                <DatepickerLocaleProvider />
-                <Header />
-                {children}
+                <AppRouterCacheProvider>
+                    <Providers>
+                        <DatepickerLocaleProvider />
+                        <LayoutContent>{children}</LayoutContent>
+                    </Providers>
+                </AppRouterCacheProvider>
             </body>
         </html>
     );

@@ -1,4 +1,4 @@
-export type BookingWithDetails = {
+export interface BookingWithDetails {
     booking_id: string;
     start_time: string;
     end_time: string;
@@ -31,3 +31,8 @@ export type BookingWithDetails = {
     payment_refunded: boolean | null;
     payment_paid_at: string | null;
 };
+
+export interface menuPage {
+    text: string;
+    href: string;
+}

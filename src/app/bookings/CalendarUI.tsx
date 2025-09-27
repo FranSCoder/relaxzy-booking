@@ -106,7 +106,7 @@ export default function CalendarUI() {
                         min={min} // 10:00
                         max={max} // 22:00
                         dayPropGetter={dayPropGetter}
-                        eventPropGetter={(event) => ({
+                        eventPropGetter={() => ({
                             style: {
                                 backgroundColor: "rgba(4, 62, 0, 1)",
                                 color: "white",
