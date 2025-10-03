@@ -3,7 +3,7 @@ import "dotenv/config";
 import fs from "fs";
 import path from "path";
 import { createClient } from "@supabase/supabase-js";
-import { parsePhoneNumberFromString } from "libphonenumber-js";
+import { parsePhoneNumberWithError } from "libphonenumber-js";
 
 // Supabase client
 const supabase = createClient(
@@ -31,7 +31,7 @@ const MONTHS = {
     DEC: "12",
 };
 
-function parseDate(row) {
+function parseStartDate(row) {
     const monthAbbr = row.File.substring(0, 3).toUpperCase();
     const year = "20" + row.File.substring(3);
     const month = MONTHS[monthAbbr];
@@ -55,17 +55,25 @@ function parseDuration(durationStr) {
 }
 
 function validatePhone(phone, defaultCountry = "ES") {
-    if (!phone) return null;
-    const number = parsePhoneNumberFromString(phone, defaultCountry);
-    if (!number || !number.isValid()) {
-        throw new Error("Invalid phone number in script validation", phone);
+    try {
+        if (!phone) return null;
+        const number = parsePhoneNumberWithError(phone, defaultCountry);
+        if (!number || !number.isValid()) {
+            throw new Error("Invalid phone number in script validation", phone);
+        }
+        return number.format("E.164");
+    } catch (error) {
+        throw new Error(error, phone);
     }
-    return number.format("E.164");
+
+
+
 }
 
 async function resolveServiceName(dbServiceName, duration, pricePerPerson) {
     // if service already provided, trust it
     if (dbServiceName && dbServiceName.trim() !== "") {
+        console.log("returned literal service name", dbServiceName)
         return dbServiceName;
     }
 
@@ -76,7 +84,7 @@ async function resolveServiceName(dbServiceName, duration, pricePerPerson) {
 
     if (error) {
         console.error("Error fetching services:", error);
-        return null;
+        throw new Error("Error fetching services:", error)
     }
 
     if (!services || services.length === 0) {
@@ -85,6 +93,7 @@ async function resolveServiceName(dbServiceName, duration, pricePerPerson) {
         );
         // fallback default if known case
         if (pricePerPerson === 50 && duration === 60) {
+            console.log("Using old Relaxzy Massage")
             return "Relaxzy";
         }
         return null;
@@ -93,16 +102,24 @@ async function resolveServiceName(dbServiceName, duration, pricePerPerson) {
     // look for a matching service
     const serviceMatch = services.find((s) => {
         try {
-            const arr = JSON.parse(s.standard_duration_prices);
+            let arr;
+            if (typeof s.standard_duration_prices === "string") {
+                arr = JSON.parse(s.standard_duration_prices);
+            } else {
+                arr = s.standard_duration_prices; // already parsed (array/object)
+            }
             console.log(
-                `Standard duration prices for ${s.name}:, ${arr}. Looking for duration: ${duration}, pricePerPerson: ${pricePerPerson}`
+                `Standard duration prices for ${s.name}:, ${JSON.stringify(arr)}. Looking for duration: ${duration}, pricePerPerson: ${pricePerPerson}`
             );
-            return arr.some(
+            const match = arr.some(
                 (p) =>
-                    p.duration === duration &&
-                    parseNumber(p.price) === pricePerPerson
+                    Number(p.duration) === Number(duration) &&
+                    Number(p.price) === Number(pricePerPerson)
             );
-        } catch {
+            console.log(`Checking service: ${s.name}`, arr, { duration, pricePerPerson, match });
+            return match;
+        } catch (e) {
+            console.error("JSON parse failed for", s.name, e);
             return false;
         }
     });
@@ -144,10 +161,10 @@ async function importBookings() {
 
                 let { data: client } = row.Phone
                     ? await supabase
-                          .from("clients")
-                          .select("id")
-                          .eq("phone", row.Phone)
-                          .single()
+                        .from("clients")
+                        .select("id")
+                        .eq("phone", row.Phone)
+                        .single()
                     : { data: null, error: null };
 
                 if (!client && row.Name) {
@@ -175,7 +192,7 @@ async function importBookings() {
                                     updateError
                                 );
                                 throw new Error(
-                                    "Invalid phone number in Supabase",
+                                    "Error updating client phone in Supabase:",
                                     updateError
                                 );
                             }
@@ -235,6 +252,8 @@ async function importBookings() {
                 pricePerPerson
             );
 
+            console.log(dbServiceName.toString().toUpperCase())
+
             const { data: service, error: serviceError } = await supabase
                 .from("services")
                 .select("id")
@@ -242,11 +261,10 @@ async function importBookings() {
                 .single();
 
             if (serviceError || !service) {
-                console.error("❌ Service not found:", {
+                throw new Error("❌ Service not found:", {
                     dbServiceName,
                     serviceError,
                 });
-                continue; // skip this row
             }
 
             if (serviceError) {
@@ -254,7 +272,7 @@ async function importBookings() {
             }
             const serviceId = service.id;
 
-            const startDate = parseDate(row);
+            const startDate = parseStartDate(row);
             const endDate = new Date(startDate.getTime() + duration * 60000);
 
             // --- BOOKINGS & PAYMENTS ---
@@ -270,13 +288,13 @@ async function importBookings() {
                     notes:
                         i === 0
                             ? [
-                                  comments,
-                                  row.TipT
-                                      ? "Propina en tarjeta " + row.TipT
-                                      : null,
-                              ]
-                                  .filter(Boolean)
-                                  .join(", ") || null
+                                comments,
+                                row.TipT
+                                    ? "Propina en tarjeta " + row.TipT
+                                    : null,
+                            ]
+                                .filter(Boolean)
+                                .join(", ") || null
                             : null,
                     status: "completed",
                 };
@@ -376,8 +394,7 @@ async function importBookings() {
             }
 
             console.log(
-                `✅ Imported booking on ${startDate.toISOString()} (${
-                    row.Massage
+                `✅ Imported booking on ${startDate.toISOString()} (${row.Massage
                 }) x${multiplier}`
             );
             console.log(`Imported ${count} of ${total}`);
@@ -397,9 +414,8 @@ async function importBookings() {
         console.log(`❌ ${failedRows.length} bookings failed to import:\n`);
         failedRows.forEach((f, idx) => {
             console.log(
-                `${idx + 1}. Massage: ${f.row.Massage}, Date: ${f.row.File}-${
-                    f.row.Sheet
-                }, Error: ${f.error}`
+                `${idx + 1}. Massage: ${f.row.Massage}, Date: ${f.row.File}-${f.row.Sheet
+                }T${f.row.StartTime}, Phone: ${f.row.Phone}, Error: ${f.error}`
             );
         });
     } else {

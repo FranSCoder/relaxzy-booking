@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "import:bookings": "node --experimental-modules src/scripts/importBookings.mjs"
+    "import:bookings": "node --experimental-modules src/scripts/importBookings.mjs",
+    "exec:testing": "node --experimental-modules src/scripts/testing.mjs"
   },
   "dependencies": {
     "@emotion/cache": "^11.14.0",
