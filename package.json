@@ -16,7 +16,8 @@
     "@emotion/styled": "^11.14.1",
     "@headlessui/react": "^2.2.4",
     "@internationalized/date": "^3.8.2",
-    "@mui/material": "^7.3.2",
+    "@mui/icons-material": "^7.3.4",
+    "@mui/material": "^7.3.4",
     "@mui/material-nextjs": "^7.3.2",
     "@mui/x-date-pickers": "^8.11.3",
     "@supabase/ssr": "^0.6.1",
@@ -35,7 +36,8 @@
     "react-big-calendar": "^1.19.4",
     "react-datepicker": "^8.3.0",
     "react-dom": "^19.0.0",
-    "react-infinite-scroll-component": "^6.1.0"
+    "react-infinite-scroll-component": "^6.1.0",
+    "react-toastify": "^11.0.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

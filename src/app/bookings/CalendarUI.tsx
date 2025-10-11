@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { Calendar, luxonLocalizer, View } from "react-big-calendar";
 import "react-big-calendar/lib/css/react-big-calendar.css";
-import { BookingWithDetails } from "@/types";
+import { BookingWithDetailsDTO } from "@/types/bookings";
 import { DateTime, Settings } from "luxon";
 import { createClient } from "@/utils/supabase/client";
 
@@ -43,7 +43,7 @@ export default function CalendarUI() {
     const supabase = createClient();
 
     const [isClient, setIsClient] = useState(false);
-    const [bookings, setBookings] = useState<BookingWithDetails[]>([]);
+    const [bookings, setBookings] = useState<BookingWithDetailsDTO[]>([]);
     const [fetchError, setFetchError] = useState("");
 
     useEffect(() => {
@@ -82,8 +82,7 @@ export default function CalendarUI() {
         if (today === current) {
             return {
                 style: {
-                    backgroundColor: "#222", // dark background
-                    color: "#fff", // white text
+                    backgroundColor: "rgba(212, 228, 209, 1)", // dark background
                 },
             };
         }
@@ -111,7 +110,7 @@ export default function CalendarUI() {
                                 backgroundColor: "rgba(4, 62, 0, 1)",
                                 color: "white",
                                 borderRadius: "8px",
-                                border: "1.5px solid #FF8C00",
+                                border: "1.5px solid #6FBF73",
                                 padding: "4px",
                             },
                         })}

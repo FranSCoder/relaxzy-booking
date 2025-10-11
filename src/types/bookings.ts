@@ -1,4 +1,18 @@
-export interface BookingWithDetails {
+export interface BookingModel {
+    name?: string;
+    surname?: string;
+    phone?: string;
+    email?: string;
+    start_time: string;
+    duration: string;
+    service_name: string;
+    notes?: string;
+    status: string;
+    created_at?: string;
+    updated_at?: string;
+}
+
+export interface BookingWithDetailsDTO {
     booking_id: string;
     start_time: string;
     end_time: string;
@@ -31,8 +45,3 @@ export interface BookingWithDetails {
     payment_refunded: boolean | null;
     payment_paid_at: string | null;
 };
-
-export interface menuPage {
-    text: string;
-    href: string;
-}

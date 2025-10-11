@@ -5,6 +5,7 @@ import DatepickerLocaleProvider from "../components/DatePickerLocaleProvider";
 import LayoutContent from "@/components/LayoutContent";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v15-appRouter";
 import { Providers } from "@/components/Providers";
+import { LayoutProvider } from "./context/LayoutContext";
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
@@ -36,8 +37,11 @@ export default function RootLayout({
                 suppressHydrationWarning>
                 <AppRouterCacheProvider>
                     <Providers>
-                        <DatepickerLocaleProvider />
-                        <LayoutContent>{children}</LayoutContent>
+                        <LayoutProvider>
+                            <DatepickerLocaleProvider />
+                            <LayoutContent>{children}</LayoutContent>
+                        </LayoutProvider>
+
                     </Providers>
                 </AppRouterCacheProvider>
             </body>

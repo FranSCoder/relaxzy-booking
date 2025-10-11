@@ -1,11 +1,27 @@
 "use client";
 
 import { useState } from 'react';
-import { login } from './actions'
+import { createClient } from '@/utils/supabase/client'
 
 export default function LoginPage() {
 
     const [message, setMessage] = useState("");
+
+    // Client-side login handler using Supabase
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        setMessage("Logging in...");
+        const formData = new FormData(e.currentTarget);
+        const email = formData.get("email") as string;
+        const password = formData.get("password") as string;
+        const supabase = createClient();
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) {
+            setMessage(error.message);
+        } else {
+            window.location.href = "/";
+        }
+    };
 
     return (
         <>
@@ -13,7 +29,7 @@ export default function LoginPage() {
                 <h2 className="text-xl font-semibold mb-4">
                     Login
                 </h2>
-                <form className="space-y-4">
+                <form className="space-y-4" onSubmit={handleSubmit}>
                     <input
                         id="email"
                         name="email"
@@ -31,9 +47,7 @@ export default function LoginPage() {
                         required
                     />
                     <button
-                        formAction={login}
                         type="submit"
-                        onLoad={() => setMessage("Logging in...")}
                         className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded">
                         Log In
                     </button>
