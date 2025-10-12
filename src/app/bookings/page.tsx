@@ -25,6 +25,10 @@ export default function Bookings() {
     useEffect(() => {
         setButtonLabel("New Booking");
         setOnButtonClick(() => () => setIsOpenBookingDialog(prev => !prev));
+        return () => {
+            setButtonLabel("");
+            setOnButtonClick(null);
+        }
     }, [setButtonLabel, setOnButtonClick, setIsOpenBookingDialog]);
 
     return (
@@ -32,7 +36,7 @@ export default function Bookings() {
             <CalendarUI />
             <DialogForm<BookingModel>
                 open={isOpenBookingDialog}
-                title="Añadir banco"
+                title="Add Booking"
                 formFields={FORM_FIELD_ADD_BOOKING as FormFieldConfigModel<BookingModel>[]}
                 formData={bookingFormData}
                 setFormData={setBookingFormData}

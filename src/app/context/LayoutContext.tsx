@@ -1,12 +1,14 @@
 "use client";
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { LayoutContextType } from "@/types/layoutContextType";
+import { usePathname } from "next/navigation";
 
 const LayoutContext = createContext<LayoutContextType | undefined>(undefined);
 
 export function LayoutProvider({ children }: { children: ReactNode }) {
   const [buttonLabel, setButtonLabel] = useState("");
   const [onButtonClick, setOnButtonClick] = useState<(() => void) | null>(null);
+
 
   return (
     <LayoutContext.Provider

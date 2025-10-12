@@ -6,10 +6,43 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
+  // output removed → default: node_modules/.prisma/client
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model Client {
+  id        String    @id @default(uuid())
+  name      String
+  email     String?
+  bookings  Booking[]
+}
+
+model Service {
+  id        String    @id @default(uuid())
+  name      String
+  duration  Int       // in minutes
+  bookings  Booking[]
+}
+
+model Therapist {
+  id        String    @id @default(uuid())
+  name      String
+  bookings  Booking[]
+}
+
+model Booking {
+  id          String     @id @default(uuid())
+  start_time  DateTime
+  end_time    DateTime
+  client      Client?    @relation(fields: [clientId], references: [id])
+  clientId    String?
+  service     Service?   @relation(fields: [serviceId], references: [id])
+  serviceId   String?
+  therapist   Therapist? @relation(fields: [therapistId], references: [id])
+  therapistId String?
+}
+

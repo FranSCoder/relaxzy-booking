@@ -18,9 +18,9 @@ export const FORM_FIELD_ADD_BOOKING = [
     { formKey: 'surname', label: 'Surname(s)', size:6, type: 'textfield' },
     { formKey: 'phone', label: 'Phone', size:6, type: 'textfield' },
     { formKey: 'email', label: 'Email', size:6, type: 'textfield' },
-    { formKey: 'start_time', label: 'Date & Time', size:6, type: 'datetime' },
+    { formKey: 'start_time', label: 'Date & Time', size:6, type: 'datepicker' },
     { formKey: 'duration', label: 'Duration', size:6, type: 'select', elements: BOOKING_DEFAULT_DURATIONS },
-    { formKey: 'service_name', label: 'ID del servicio', size:6, type: 'select', elements:  BOOKING_DEFAULT_SERVICES},
+    { formKey: 'service_name', label: 'Massage', size:6, type: 'select', elements:  BOOKING_DEFAULT_SERVICES},
     { formKey: 'notes', label: 'Notas', size:6, type: 'textfield' },
 
 ];
