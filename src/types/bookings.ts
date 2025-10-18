@@ -12,6 +12,14 @@ export interface BookingModel {
     updated_at?: string;
 }
 
+export interface BookingDTO {
+  id: string;
+  client_name: string;
+  service_name: string;
+  start_time: string | Date;
+  end_time: string | Date;
+}
+
 export interface BookingWithDetailsDTO {
     booking_id: string;
     start_time: string;

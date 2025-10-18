@@ -52,19 +52,22 @@ export default function CalendarUI() {
 
     useEffect(() => {
         const fetchData = async () => {
-            const { data, error } = await supabase
-                .from("bookings_with_details")
-                .select("*");
-            if (!error && data) {
+            try {
+                const response = await fetch("/api/bookings");
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.error || "Unknown error");
+                }
+                const data = await response.json();
                 console.log("Fetched bookings:", data);
                 setBookings(data);
-            } else if (error) {
+            } catch (error: any) {
                 console.error("Error fetching bookings:", error.message);
                 setFetchError(error.message);
             }
         };
         fetchData();
-    }, [supabase]);
+    }, []);
 
     if (!isClient) return null;
 
