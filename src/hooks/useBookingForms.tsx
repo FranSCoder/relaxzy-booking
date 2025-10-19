@@ -1,6 +1,6 @@
 import {toast} from 'react-toastify'
-import { useState } from 'react';
-import { BookingModel } from '@/types';
+import { useState, useEffect } from 'react';
+import { BookingModel } from '@/types/bookings';
 
 const initialStateBookingForm: BookingModel = {
   name: "",
@@ -20,10 +20,34 @@ export const useBookingForm = () => {
   const [isOpenBookingDialog, setIsOpenBookingDialog] = useState<boolean>(false);
 
   const [bookingFormData, setBookingFormData] = useState<BookingModel>(initialStateBookingForm);
+  const [availableServices, setAvailableServices] = useState<string[]>([]);
+  const [availableDurations, setAvailableDurations] = useState<string[]>([]);
+
+  useEffect(() => {
+    const fetchLookups = async () => {
+      try {
+        const res = await fetch('/api/services');
+        if (!res.ok) {
+          console.error('Failed to fetch services lookup:', res.statusText);
+          return;
+        }
+        const services = await res.json();
+        // services expected shape: { service_name, service_duration }
+  const uniqueServices = Array.from(new Set(services.map((s: any) => String(s.service_name)))).filter(Boolean) as string[]
+  setAvailableServices(uniqueServices);
+  const uniqueDurations = Array.from(new Set(services.map((s: any) => String(s.service_duration ?? '')))).filter(Boolean) as string[];
+  setAvailableDurations(uniqueDurations);
+      } catch (err) {
+        console.error('Lookup fetch error', err);
+      }
+    };
+
+    fetchLookups();
+  }, []);
 
   const handleAccept = () => {
-    console.log('Banco creado:', bookingFormData);
-    toast.success('El banco se ha añadido correctamente.');
+    console.log('A new reservation has been created:', bookingFormData);
+    toast.success('The reservation has been created successfully.');
     setIsOpenBookingDialog(false);
     setBookingFormData(initialStateBookingForm);
   };
@@ -40,5 +64,7 @@ export const useBookingForm = () => {
     setBookingFormData,
     handleAccept,
     handleCancel,
+    availableServices,
+    availableDurations,
   };
 };

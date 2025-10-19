@@ -12,8 +12,9 @@ import {
   Select,
   TextField,
   Typography,
+  Autocomplete
 } from '@mui/material';
-import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
+import { DatePicker, DateTimePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { es } from 'date-fns/locale';
 
@@ -28,6 +29,7 @@ type GridFormElementProps<T> = {
   label?: string;
   filesMax?: number;
   autoFocus?: boolean;
+  showTime?: boolean;
 };
 
 export function GridFormElement<T>({
@@ -41,6 +43,7 @@ export function GridFormElement<T>({
   label = '',
   filesMax = 1,
   autoFocus = false,
+  showTime = false,
 }: GridFormElementProps<T>) {
   function isRecordOfBooleans(value: unknown): value is Record<string, boolean> {
     return (
@@ -80,22 +83,31 @@ export function GridFormElement<T>({
         return (
           <Grid size={size}>
             <FormControl size="small" fullWidth>
-              <InputLabel id={`${type}-label`} sx={{ color: '#3d3d3d' }}>
-                {label}
-              </InputLabel>
-              <Select
-                labelId={`${type}-label`}
-                id={`${type}-select`}
-                label={label}
+              <Autocomplete
+                freeSolo // <-- allows free text typing
+                options={elements} // your list of available options
                 value={typeof formData[formKey] === 'string' ? formData[formKey] : ''}
-                onChange={handleSelectChange<T, typeof formKey>(formKey, setFormData)}
-              >
-                {elements.map((element) => (
-                  <MenuItem key={element} value={element}>
-                    {element}
-                  </MenuItem>
-                ))}
-              </Select>
+                onChange={(_, newValue) => {
+                  setFormData(prev => ({
+                    ...prev,
+                    [formKey]: newValue || '',
+                  }));
+                }}
+                onInputChange={(_, newInputValue) => {
+                  setFormData(prev => ({
+                    ...prev,
+                    [formKey]: newInputValue || '',
+                  }));
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label={label}
+                    size="small"
+                    sx={{ borderRadius: '5px', width: '100%' }}
+                  />
+                )}
+              />
             </FormControl>
           </Grid>
         );
@@ -111,7 +123,7 @@ export function GridFormElement<T>({
               value={formData[formKey]}
               onChange={handleInputChange<T, typeof formKey>(formKey, setFormData)}
               fullWidth
-              autoFocus={true}
+              autoFocus={autoFocus}
             />
           </Grid>
         );
@@ -120,23 +132,41 @@ export function GridFormElement<T>({
         return (
           <Grid size={size}>
             <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
-              <DatePicker
-                label={label}
-                value={value ? (value instanceof Date ? value : new Date(value as string)) : null}
-                onChange={(newValue) => {
-                  setFormData((prevData) => ({
-                    ...prevData,
-                    [formKey]: newValue ? newValue : '',
-                  }));
-                }}
-                format="dd/MM/yyyy"
-                slotProps={{
-                  textField: {
-                    size: 'small',
-                    sx: { borderRadius: '5px', width: '100%' },
-                  },
-                }}
-              />
+              {showTime
+                ? (
+                  <DateTimePicker
+                    label={label}
+                    value={value ? (value instanceof Date ? value : new Date(value as string)) : null}
+                    onChange={(newValue) => {
+                      setFormData((prevData) => ({
+                        ...prevData,
+                        [formKey]: newValue || '',
+                      }));
+                    }}
+                    format="dd/MM/yyyy HH:mm"
+                    ampm={false}
+                    slotProps={{
+                      textField: { size: 'small', sx: { borderRadius: '5px', width: '100%' } },
+                    }}
+                  />
+                )
+                : (
+                  <DatePicker
+                    label={label}
+                    value={value ? (value instanceof Date ? value : new Date(value as string)) : null}
+                    onChange={(newValue) => {
+                      setFormData((prevData) => ({
+                        ...prevData,
+                        [formKey]: newValue || '',
+                      }));
+                    }}
+                    format="dd/MM/yyyy"
+                    slotProps={{
+                      textField: { size: 'small', sx: { borderRadius: '5px', width: '100%' } },
+                    }}
+                  />
+                )
+              }
             </LocalizationProvider>
           </Grid>
         );
@@ -200,7 +230,7 @@ export function GridFormElement<T>({
             </Grid>
           );
         }
-        default: ""
+      default: ""
     }
   };
 

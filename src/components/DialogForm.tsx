@@ -2,6 +2,8 @@ import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Grid } from 
 import { GridFormElement } from './GridFormElement';
 import React from 'react';
 import { FormFieldConfigModel } from '@/types/formFieldConfig';
+import BookingForm from '@/app/bookings/BookingForm';
+import { useSimilarClients } from '@/app/bookings/page';
 
 
 type DialogFormProps<T> = {
@@ -33,6 +35,14 @@ export function DialogForm<T>({
       onClose={onCancel}
       maxWidth="md"
       fullWidth
+      sx={{
+        '& .MuiDialog-container': {
+          alignItems: 'flex-start', // 👈 aligns dialog to top instead of center
+        },
+        '& .MuiPaper-root': {
+          marginTop: '2rem', // 👈 add some spacing from top
+        },
+      }}
     >
       <DialogTitle>{title}</DialogTitle>
       <DialogContent sx={{ overflowY: 'hidden' }}>
@@ -49,6 +59,8 @@ export function DialogForm<T>({
               elements={field.elements}
               filesMax={field.filesMax}
               text={field.text}
+              showTime={field.showTime}
+              autoFocus={field.autoFocus}
             />
           ))}
         </Grid>

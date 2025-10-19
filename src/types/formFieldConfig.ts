@@ -6,4 +6,6 @@ export type FormFieldConfigModel<T> = {
   elements?: any[];
   text?: string;
   filesMax?: number;
+  showTime?: boolean;
+  autoFocus?: boolean;
 };

@@ -1,0 +1,29 @@
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+
+// /api/services
+export async function GET() {
+  try {
+    const services = await prisma.services.findMany({
+      orderBy: {
+        name: "asc",
+      },
+    });
+
+    const formatted = services.map((s) => ({
+      id: s.id,
+      service_name: s.name,
+      service_duration: s.duration,
+      service_price: s.price,
+      service_notes: s.notes,
+    }));
+
+    return NextResponse.json(formatted);
+  } catch (error) {
+    console.error("Error fetching services:", error);
+    return NextResponse.json(
+      { error: "Error fetching services" },
+      { status: 500 }
+    );
+  }
+}

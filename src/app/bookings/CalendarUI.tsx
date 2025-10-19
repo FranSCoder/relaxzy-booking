@@ -59,7 +59,7 @@ export default function CalendarUI() {
                     throw new Error(err.error || "Unknown error");
                 }
                 const data = await response.json();
-                console.log("Fetched bookings:", data);
+                console.log("Fetched bookings:", data.length);
                 setBookings(data);
             } catch (error: any) {
                 console.error("Error fetching bookings:", error.message);
