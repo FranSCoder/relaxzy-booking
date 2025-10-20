@@ -53,7 +53,7 @@ export default function CalendarUI() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const response = await fetch("/api/bookings");
+                const response = await fetch("/api/bookings/all");
                 if (!response.ok) {
                     const err = await response.json();
                     throw new Error(err.error || "Unknown error");

@@ -1,9 +1,8 @@
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Grid } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Grid, Typography, Box, Container } from '@mui/material';
 import { GridFormElement } from './GridFormElement';
 import React from 'react';
 import { FormFieldConfigModel } from '@/types/formFieldConfig';
-import BookingForm from '@/app/bookings/BookingForm';
-import { useSimilarClients } from '@/app/bookings/page';
+import { ClientRow, useSimilarClients } from '@/hooks/useSimilarClients';
 
 
 type DialogFormProps<T> = {
@@ -29,6 +28,29 @@ export function DialogForm<T>({
   acceptText = 'Aceptar',
   cancelText = 'Cancelar',
 }: DialogFormProps<T>) {
+
+  // inside DialogForm, with setFormData typed to BookingModel setState
+  const { clients, loading, error } = useSimilarClients({
+    name: (formData as any).name,
+    surname: (formData as any).surname,
+    email: (formData as any).email,
+    phone: (formData as any).phone,
+  });
+
+  const handlePickClient = (c: ClientRow) => {
+    // map client -> booking form model (split full_name if you want)
+    const [firstName, ...rest] = (c.full_name || "").split(" ");
+    const surname = rest.join(" ");
+    setFormData((prev: any) => ({
+      ...prev,
+      name: firstName ?? "",
+      surname: surname ?? "",
+      email: c.email ?? prev.email,
+      phone: c.phone ?? prev.phone,
+      notes: prev.notes, // keep existing notes
+    }));
+  };
+
   return (
     <Dialog
       open={open}
@@ -73,6 +95,18 @@ export function DialogForm<T>({
           {acceptText}
         </Button>
       </DialogActions>
+      {loading && <Typography variant="body2">Searching...</Typography>}
+      {error && <Typography color="error">{error}</Typography>}
+      {clients.length > 0 && (
+        <Container sx={{ mt: 2 }}>
+          <Typography variant="subtitle2">Possible existing clients:</Typography>
+          {clients.map((c) => (
+            <Button key={c.id} onClick={() => handlePickClient(c)} sx={{ textTransform: "none" }}>
+              {c.full_name} – {c.phone || c.email}
+            </Button>
+          ))}
+        </Container>
+      )}
     </Dialog>
   );
 }

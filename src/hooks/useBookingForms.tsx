@@ -46,10 +46,28 @@ export const useBookingForm = () => {
   }, []);
 
   const handleAccept = () => {
-    console.log('A new reservation has been created:', bookingFormData);
-    toast.success('The reservation has been created successfully.');
-    setIsOpenBookingDialog(false);
-    setBookingFormData(initialStateBookingForm);
+    (async () => {
+      try {
+        const res = await fetch('/api/bookings/new', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(bookingFormData),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          console.error('Booking create error', data);
+          toast.error(data?.error || 'Error creating booking');
+          return;
+        }
+        console.log('A new reservation has been created:', data.booking);
+        toast.success('The reservation has been created successfully.');
+        setIsOpenBookingDialog(false);
+        setBookingFormData(initialStateBookingForm);
+      } catch (err) {
+        console.error('Network or server error creating booking', err);
+        toast.error('Error creating booking');
+      }
+    })();
   };
 
   const handleCancel = () => {
