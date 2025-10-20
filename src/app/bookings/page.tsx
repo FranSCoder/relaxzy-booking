@@ -10,36 +10,6 @@ import { FORM_FIELDS_ADD_BOOKING } from "@/constants";
 import { FormFieldConfigModel } from "@/types/formFieldConfig";
 import { useLayout } from "../context/LayoutContext";
 import { useEffect, useState } from "react";
-import debounce from "lodash.debounce";
-
-export function useSimilarClients(formData: Partial<BookingModel>) {
-  const [clients, setClients] = useState([]);
-
-  useEffect(() => {
-    const { name, surname, email, phone } = formData;
-    if (!name && !surname && !email && !phone) {
-      setClients([]);
-      return;
-    }
-
-    const fetchClients = debounce(async () => {
-      const res = await fetch("/api/clients/find-similar", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, surname, email, phone }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setClients(data);
-      }
-    }, 500);
-
-    fetchClients();
-    return () => fetchClients.cancel();
-  }, [formData.name, formData.surname, formData.email, formData.phone]);
-
-  return clients;
-}
 
 export default function Bookings() {
 

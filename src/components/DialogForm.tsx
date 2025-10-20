@@ -3,6 +3,7 @@ import { GridFormElement } from './GridFormElement';
 import React from 'react';
 import { FormFieldConfigModel } from '@/types/formFieldConfig';
 import { ClientRow, useSimilarClients } from '@/hooks/useSimilarClients';
+import { BookingModel } from '@/types/bookings';
 
 
 type DialogFormProps<T> = {
@@ -31,20 +32,20 @@ export function DialogForm<T>({
 
   // inside DialogForm, with setFormData typed to BookingModel setState
   const { clients, loading, error } = useSimilarClients({
-    name: (formData as any).name,
-    surname: (formData as any).surname,
-    email: (formData as any).email,
-    phone: (formData as any).phone,
+    name: (formData as Partial<BookingModel>).name,
+    surname: (formData as Partial<BookingModel>).surname,
+    email: (formData as Partial<BookingModel>).email,
+    phone: (formData as Partial<BookingModel>).phone,
   });
 
   const handlePickClient = (c: ClientRow) => {
-    // map client -> booking form model (split full_name if you want)
-    const [firstName, ...rest] = (c.full_name || "").split(" ");
-    const surname = rest.join(" ");
+    // map client -> booking form model using separate name/surname fields
+    const firstName = c.name ?? "";
+    const surname = c.surname ?? "";
     setFormData((prev: any) => ({
       ...prev,
-      name: firstName ?? "",
-      surname: surname ?? "",
+      name: firstName,
+      surname: surname,
       email: c.email ?? prev.email,
       phone: c.phone ?? prev.phone,
       notes: prev.notes, // keep existing notes
@@ -102,7 +103,7 @@ export function DialogForm<T>({
           <Typography variant="subtitle2">Possible existing clients:</Typography>
           {clients.map((c) => (
             <Button key={c.id} onClick={() => handlePickClient(c)} sx={{ textTransform: "none" }}>
-              {c.full_name} – {c.phone || c.email}
+              {`${c.name ?? ''} ${c.surname ?? ''}`.trim()} – {c.phone || c.email}
             </Button>
           ))}
         </Container>

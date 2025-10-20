@@ -171,7 +171,7 @@ async function importBookings() {
                     const { data: nameMatch } = await supabase
                         .from("clients")
                         .select("id, phone")
-                        .eq("full_name", row.Name)
+                        .eq("name", row.Name)
                         .maybeSingle();
 
                     if (nameMatch) {
@@ -202,10 +202,11 @@ async function importBookings() {
 
                 if (!client) {
                     const { data: inserted, error: insertError } =
-                        await supabase
+                            await supabase
                             .from("clients")
                             .insert({
-                                full_name: row.Name || null,
+                                name: row.Name || null,
+                                surname: null,
                                 phone: row.Phone || null,
                             })
                             .select("id")

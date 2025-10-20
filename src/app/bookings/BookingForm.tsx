@@ -8,7 +8,7 @@ import debounce from "lodash.debounce";
 
 type DurationOption = { label: string; value: number };
 type Service = { id: string; name: string };
-type Client = { id: string; full_name: string; email: string; phone: string };
+type Client = { id: string; name: string | null; surname: string | null; email: string; phone: string };
 type FormData = {
     name: string;
     email: string;
@@ -109,7 +109,7 @@ const BookingForm = () => {
     const handleSelectCustomer = (client: Client) => {
         setFormData((prev) => ({
             ...prev,
-            name: client.full_name || "",
+            name: `${client.name || ""}${client.surname ? ` ${client.surname}` : ""}`,
             email: client.email || "",
             phone: client.phone || "",
         }));
@@ -207,9 +207,9 @@ const BookingForm = () => {
         if (isCreatingCustomer) {
             // 1. Check for existing client by email or phone
             const { data: existingClients, error: clientSearchError } = await supabase
-                .from("clients")
-                .select("id, full_name, email, phone")
-                .or(`email.eq.${formData.email},phone.eq.${formData.phone}`);
+            .from("clients")
+            .select("id, name, surname, email, phone")
+            .or(`email.eq.${formData.email},phone.eq.${formData.phone}`);
 
             if (clientSearchError) {
                 alert("Error searching for existing client");
@@ -227,8 +227,8 @@ const BookingForm = () => {
             // 2. Check for name-only match
             const { data: nameMatches, error: nameSearchError } = await supabase
                 .from("clients")
-                .select("id, full_name, email, phone")
-                .eq("full_name", formData.name);
+                .select("id, name, surname, email, phone")
+                .eq("name", formData.name);
 
             if (nameSearchError) {
                 alert("Error searching for name matches");
@@ -247,11 +247,16 @@ const BookingForm = () => {
             }
 
             // 3. Create the new client
+            // split provided full name into name and surname (basic split on first space)
+            const [firstName, ...rest] = formData.name.trim().split(" ");
+            const lastName = rest.join(" ") || null;
+
             const { data: newClient, error: createClientError } = await supabase
                 .from("clients")
                 .insert([
                     {
-                        full_name: formData.name,
+                        name: firstName,
+                        surname: lastName,
                         email: formData.email,
                         phone: formData.phone,
                     },
@@ -521,7 +526,7 @@ const BookingForm = () => {
                                     onClick={() => handleSelectCustomer(client)}
                                     className="w-full text-left p-2 border rounded-xl bg-gray-50 dark:bg-neutral-800 hover:bg-gray-100 dark:hover:bg-neutral-700 transition">
                                     <div className="text-sm font-semibold">
-                                        {client.full_name}
+                                        {`${client.name || ""}${client.surname ? ` ${client.surname}` : ""}`}
                                     </div>
                                     <div className="text-sm">
                                         {client.email}

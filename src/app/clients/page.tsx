@@ -10,7 +10,6 @@ export default function UsersPage() {
   const supabase = createClient();
 
   const [clients, setClients] = useState<any[]>([]);
-  const [displayed, setDisplayed] = useState<any[]>([]);
   const [page, setPage] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearching, setIsSearching] = useState(false);
@@ -34,7 +33,7 @@ export default function UsersPage() {
         return;
       }
 
-      setDisplayed(data);
+      setClients(data);
       setIsSearching(true);
       setHasMore(false);
     }, 300)
@@ -56,7 +55,6 @@ export default function UsersPage() {
     }
 
     setClients(data);
-    setDisplayed(data);
     setPage(pageToLoad);
     setHasMore(data.length === LIMIT);
     setIsSearching(false);
@@ -110,7 +108,7 @@ export default function UsersPage() {
         className="w-full p-2 mb-4 border rounded"
       />
 
-      {renderTable(displayed)}
+      {renderTable(clients)}
 
       {!isSearching && (
         <div className="flex justify-between mt-4">

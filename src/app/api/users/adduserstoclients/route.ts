@@ -26,7 +26,8 @@ export async function GET() {
 
   // Step 2: Prepare new client entries
   const clientsToInsert: {
-    full_name: string;
+    name?: string | null;
+    surname?: string | null;
     email: string;
     phone: string;
     notes: string;
@@ -35,7 +36,9 @@ export async function GET() {
   for (const user of allUsers) {
     const email = user.email ?? "";
     const phone = user.phone ?? "";
-    const full_name = user.user_metadata?.full_name ?? email ?? "Unnamed";
+  const fullNameMeta = user.user_metadata?.full_name ?? email ?? "Unnamed";
+  const [firstName, ...rest] = String(fullNameMeta).split(" ");
+  const lastName = rest.join(" ");
 
     // Skip if both email and phone are empty
     if (!email && !phone) continue;
@@ -50,7 +53,8 @@ export async function GET() {
 
     if (!existing || existing.length === 0) {
       clientsToInsert.push({
-        full_name,
+        name: firstName || null,
+        surname: lastName || null,
         email,
         phone,
         notes: "",

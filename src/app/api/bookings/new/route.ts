@@ -33,8 +33,9 @@ export async function POST(request: Request) {
       client = await prisma.clients.findFirst({ where: { phone: body.phone } });
     }
     if (!client) {
-      const full_name = `${body.name ?? ''} ${body.surname ?? ''}`.trim() || 'Unknown';
-      client = await prisma.clients.create({ data: { full_name, email: body.email ?? null, phone: body.phone ?? null } });
+      const name = body.name ?? '';
+      const surname = body.surname ?? '';
+      client = await prisma.clients.create({ data: { name: name || null, surname: surname || null, email: body.email ?? null, phone: body.phone ?? null } });
     }
 
     // 2) find service

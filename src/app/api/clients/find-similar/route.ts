@@ -12,8 +12,9 @@ export async function POST(req: Request) {
 
 const filters: Prisma.clientsWhereInput[] = [];
 
-if (name) filters.push({ full_name: { contains: name, mode: "insensitive" } });
-if (surname) filters.push({ full_name: { contains: surname, mode: "insensitive" } });
+// search by name or surname (case-insensitive contains)
+if (name) filters.push({ name: { contains: name, mode: "insensitive" } });
+if (surname) filters.push({ surname: { contains: surname, mode: "insensitive" } });
 if (email) filters.push({ email: { contains: email, mode: "insensitive" } });
 if (phone) filters.push({ phone: { contains: phone, mode: "insensitive" } });
 
@@ -22,7 +23,8 @@ if (phone) filters.push({ phone: { contains: phone, mode: "insensitive" } });
       where: { OR: filters },
       select: {
         id: true,
-        full_name: true,
+        name: true,
+        surname: true,
         email: true,
         phone: true,
         notes: true,

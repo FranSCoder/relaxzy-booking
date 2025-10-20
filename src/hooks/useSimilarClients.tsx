@@ -1,21 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 import debounce from "lodash.debounce";
+import { BookingModel } from "@/types/bookings";
 
 export type ClientRow = {
   id: string;
-  full_name: string;
+  name?: string | null;
+  surname?: string | null;
   email?: string | null;
   phone?: string | null;
   notes?: string | null;
   created_at?: string | null;
 };
 
-export function useSimilarClients(formData: {
-  name?: string;
-  surname?: string;
-  email?: string;
-  phone?: string;
-}) {
+export function useSimilarClients(formData: Partial<BookingModel>) {
   const [clients, setClients] = useState<ClientRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | undefined>(undefined);
