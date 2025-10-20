@@ -1,4 +1,4 @@
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Grid, Typography, Box, Container } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Grid, Typography, Container } from '@mui/material';
 import { GridFormElement } from './GridFormElement';
 import React from 'react';
 import { FormFieldConfigModel } from '@/types/formFieldConfig';
@@ -6,7 +6,7 @@ import { ClientRow, useSimilarClients } from '@/hooks/useSimilarClients';
 import { BookingModel } from '@/types/bookings';
 
 
-type DialogFormProps<T> = {
+type DialogFormProps<T extends Partial<BookingModel>> = {
   open: boolean;
   title: string;
   formFields: FormFieldConfigModel<T>[];
@@ -18,7 +18,7 @@ type DialogFormProps<T> = {
   cancelText?: React.ReactNode;
 };
 
-export function DialogForm<T>({
+export function DialogForm<T extends Partial<BookingModel>>({
   open,
   title,
   formFields,
@@ -42,14 +42,14 @@ export function DialogForm<T>({
     // map client -> booking form model using separate name/surname fields
     const firstName = c.name ?? "";
     const surname = c.surname ?? "";
-    setFormData((prev: any) => ({
+    setFormData((prev: T) => ({
       ...prev,
       name: firstName,
       surname: surname,
-      email: c.email ?? prev.email,
-      phone: c.phone ?? prev.phone,
-      notes: prev.notes, // keep existing notes
-    }));
+      email: c.email ?? (prev.email as string | undefined),
+      phone: c.phone ?? (prev.phone as string | undefined),
+      notes: prev.notes as string | undefined, // keep existing notes
+    } as T));
   };
 
   return (

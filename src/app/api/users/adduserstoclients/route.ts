@@ -8,7 +8,7 @@ const supabaseAdmin = createAdminClient()
 export async function GET() {
   const perPage = 1000;
   let page = 1;
-  let allUsers: any[] = [];
+  let allUsers = [];
 
   // Step 1: Fetch all users using pagination
   while (true) {
@@ -36,9 +36,9 @@ export async function GET() {
   for (const user of allUsers) {
     const email = user.email ?? "";
     const phone = user.phone ?? "";
-  const fullNameMeta = user.user_metadata?.full_name ?? email ?? "Unnamed";
-  const [firstName, ...rest] = String(fullNameMeta).split(" ");
-  const lastName = rest.join(" ");
+    const fullNameMeta = user.user_metadata?.full_name ?? email ?? "Unnamed";
+    const [firstName, ...rest] = String(fullNameMeta).split(" ");
+    const lastName = rest.join(" ");
 
     // Skip if both email and phone are empty
     if (!email && !phone) continue;

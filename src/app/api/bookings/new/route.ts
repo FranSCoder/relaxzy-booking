@@ -56,7 +56,7 @@ export async function POST(request: Request) {
     }
     if (!durationMinutes && service.duration != null) {
       // service.duration may be Decimal or number
-      const sd = (service as any).duration;
+      const sd = service.duration;
       durationMinutes = sd != null ? parseInt(String(sd), 10) : 0;
     }
     if (!durationMinutes) durationMinutes = 60;

@@ -9,7 +9,7 @@ import { BookingModel } from "@/types/bookings";
 import { FORM_FIELDS_ADD_BOOKING } from "@/constants";
 import { FormFieldConfigModel } from "@/types/formFieldConfig";
 import { useLayout } from "../context/LayoutContext";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 export default function Bookings() {
 
@@ -27,10 +27,26 @@ export default function Bookings() {
     // Build a local copy of form fields where we inject dynamic elements
     const formFieldsLocal = FORM_FIELDS_ADD_BOOKING.map(field => {
         if (field.formKey === 'service_name') {
-            return { ...field, elements: availableServices.length ? availableServices : field.elements };
+            return {
+                ...field,
+                elements: availableServices.length
+                    ? [
+                        ...availableServices,
+                        ...field.elements!.filter(el => !availableServices.includes(el))
+                    ]
+                    : field.elements
+            };
         }
         if (field.formKey === 'duration') {
-            return { ...field, elements: availableDurations.length ? availableDurations : field.elements };
+            return {
+                ...field,
+                elements: availableDurations.length
+                    ? [
+                        ...availableDurations,
+                        ...field.elements!.filter(el => !availableDurations.includes(el))
+                    ]
+                    : field.elements
+            };
         }
         return field;
     });

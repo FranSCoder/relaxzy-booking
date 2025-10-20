@@ -40,8 +40,6 @@ export default function CalendarUI() {
         return { min: start.toJSDate(), max: end.toJSDate() };
     }, []);
 
-    const supabase = createClient();
-
     const [isClient, setIsClient] = useState(false);
     const [bookings, setBookings] = useState<BookingWithDetailsDTO[]>([]);
     const [fetchError, setFetchError] = useState("");
@@ -61,9 +59,14 @@ export default function CalendarUI() {
                 const data = await response.json();
                 console.log("Fetched bookings:", data.length);
                 setBookings(data);
-            } catch (error: any) {
-                console.error("Error fetching bookings:", error.message);
-                setFetchError(error.message);
+            } catch (error: unknown) {
+                if (error instanceof Error) {
+                    console.error("Error fetching bookings:", error.message);
+                    setFetchError(error.message);
+                } else {
+                    console.error("Unknown error fetching bookings:", error);
+                    setFetchError("Unknown error");
+                }
             }
         };
         fetchData();

@@ -17,8 +17,8 @@ export function useSimilarClients(formData: Partial<BookingModel>) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | undefined>(undefined);
 
-  // combine search key so we can put a single dependency
-  const searchKey = `${formData.name ?? ""}|${formData.surname ?? ""}|${formData.email ?? ""}|${formData.phone ?? ""}`;
+  // derive primitive fields so we can depend on stable primitives in the effect
+  const { name, surname, email, phone } = formData;
 
   // Create a stable debounced fetch function
   const debouncedFetch = useMemo(() => {
@@ -36,10 +36,16 @@ export function useSimilarClients(formData: Partial<BookingModel>) {
         }
         const data = await res.json();
         setClients(data ?? []);
-      } catch (err: any) {
-        console.error("similar clients fetch error", err);
-        setError(err?.message ?? "Unknown error");
-        setClients([]);
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          console.error("Similar clients fetch error", err);
+          setError(err?.message ?? "Unknown error");
+          setClients([]);
+        } else {
+          console.error("Similar clients unknown fetch error:", error);
+          setError("Unknown error");
+          setClients([]);
+        }
       } finally {
         setLoading(false);
       }
@@ -47,7 +53,6 @@ export function useSimilarClients(formData: Partial<BookingModel>) {
   }, []);
 
   useEffect(() => {
-    const { name, surname, email, phone } = formData;
     if (!name && !surname && !email && !phone) {
       setClients([]);
       setLoading(false);
@@ -57,10 +62,9 @@ export function useSimilarClients(formData: Partial<BookingModel>) {
     return () => {
       debouncedFetch.cancel();
     };
-    // Note: depend on the derived string key and the debounced function only.
-    // Do NOT depend on the `formData` object reference because it's recreated on every render
-    // and would cause an infinite loop.
-  }, [searchKey, debouncedFetch]);
+    // Depend on primitive fields (name, surname, email, phone) and the debounced function.
+    // Avoid depending on `formData` object reference to prevent unnecessary runs.
+  }, [name, surname, email, phone, debouncedFetch]);
 
   return { clients, loading, error };
 }

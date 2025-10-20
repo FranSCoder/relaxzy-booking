@@ -1,15 +1,12 @@
-import { handleInputChange, handleSelectChange } from '@/utils/create-booking-handlers';
+import { handleInputChange } from '@/utils/create-booking-handlers';
 import {
   Checkbox,
   FormControl,
   FormControlLabel,
   FormGroup,
   Grid,
-  InputLabel,
-  MenuItem,
   Radio,
   RadioGroup,
-  Select,
   TextField,
   Typography,
   Autocomplete
@@ -24,7 +21,7 @@ type GridFormElementProps<T> = {
   formData: T;
   setFormData: React.Dispatch<React.SetStateAction<T>>;
   formKey: keyof T;
-  elements?: any[];
+  elements?: string[];
   text?: string;
   label?: string;
   filesMax?: number;
@@ -41,7 +38,6 @@ export function GridFormElement<T>({
   elements = [],
   text = '',
   label = '',
-  filesMax = 1,
   autoFocus = false,
   showTime = false,
 }: GridFormElementProps<T>) {
@@ -230,7 +226,8 @@ export function GridFormElement<T>({
             </Grid>
           );
         }
-      default: ""
+      default:
+        return null
     }
   };
 

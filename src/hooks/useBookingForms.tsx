@@ -1,6 +1,7 @@
 import {toast} from 'react-toastify'
 import { useState, useEffect } from 'react';
 import { BookingModel } from '@/types/bookings';
+import { services } from '@prisma/client';
 
 const initialStateBookingForm: BookingModel = {
   name: "",
@@ -33,9 +34,9 @@ export const useBookingForm = () => {
         }
         const services = await res.json();
         // services expected shape: { service_name, service_duration }
-  const uniqueServices = Array.from(new Set(services.map((s: any) => String(s.service_name)))).filter(Boolean) as string[]
+  const uniqueServices = Array.from(new Set(services.map((s: services) => String(s.name)))).filter(Boolean) as string[]
   setAvailableServices(uniqueServices);
-  const uniqueDurations = Array.from(new Set(services.map((s: any) => String(s.service_duration ?? '')))).filter(Boolean) as string[];
+  const uniqueDurations = Array.from(new Set(services.map((s: services) => String(s.duration ?? '')))).filter(Boolean) as string[];
   setAvailableDurations(uniqueDurations);
       } catch (err) {
         console.error('Lookup fetch error', err);

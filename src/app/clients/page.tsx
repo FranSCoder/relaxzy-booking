@@ -1,24 +1,47 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import debounce from 'lodash.debounce';
+import { clients as ClientType } from '@prisma/client';
 
 const LIMIT = 100;
 
 export default function UsersPage() {
-  const supabase = createClient();
+  // Memoize supabase client so it remains stable
+  const supabase = useMemo(() => createClient(), []);
 
-  const [clients, setClients] = useState<any[]>([]);
+  // State
+  const [clients, setClients] = useState<ClientType[]>([]);
   const [page, setPage] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [hasMore, setHasMore] = useState(true);
 
+  // Load clients function, stable with useCallback
+  const loadClients = useCallback(async (pageToLoad: number) => {
+    const { data, error } = await supabase
+      .from('clients')
+      .select('*')
+      .range(pageToLoad * LIMIT, (pageToLoad + 1) * LIMIT - 1);
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+  if (!data) return;
+
+  setClients(data as ClientType[]);
+    setPage(pageToLoad);
+    setHasMore(data.length === LIMIT);
+    setIsSearching(false);
+  }, [supabase]);
+
+  // Debounced search function
   const debouncedSearch = useRef(
     debounce(async (text: string) => {
       if (!text) {
-        // Reset search
         loadClients(0);
         setIsSearching(false);
         return;
@@ -33,39 +56,27 @@ export default function UsersPage() {
         return;
       }
 
-      setClients(data);
+  if (!data) return;
+
+  setClients(data as ClientType[]);
       setIsSearching(true);
       setHasMore(false);
     }, 300)
   ).current;
 
+  // Load first page on mount
   useEffect(() => {
     loadClients(0);
-  }, []);
+  }, [loadClients]);
 
-  async function loadClients(pageToLoad: number) {
-    const { data, error } = await supabase
-      .from('clients')
-      .select('*')
-      .range(pageToLoad * LIMIT, (pageToLoad + 1) * LIMIT - 1);
-
-    if (error) {
-      console.error(error);
-      return;
-    }
-
-    setClients(data);
-    setPage(pageToLoad);
-    setHasMore(data.length === LIMIT);
-    setIsSearching(false);
-  }
-
+  // Handle search input
   function handleSearch(text: string) {
     setSearchTerm(text);
     debouncedSearch(text);
   }
 
-  function renderTable(data: any[]) {
+  // Render table
+  function renderTable(data: ClientType[]) {
     if (data.length === 0) return <p>No clients found.</p>;
 
     return (
@@ -82,12 +93,12 @@ export default function UsersPage() {
           </tr>
         </thead>
         <tbody>
-          {data.map((client, idx) => (
-            <tr key={idx}>
+          {data.map((client) => (
+            <tr key={client.id}>
               {Object.entries(client)
                 .filter(([key]) => key !== 'id')
-                .map(([key, val], j) => (
-                  <td key={j} className="border px-2 py-1">
+                .map(([key, val]) => (
+                  <td key={key} className="border px-2 py-1">
                     {String(val)}
                   </td>
                 ))}

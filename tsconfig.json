@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "useUnknownInCatchVariables": true,
     "baseUrl": ".",
     "target": "ES2017",
     "lib": [

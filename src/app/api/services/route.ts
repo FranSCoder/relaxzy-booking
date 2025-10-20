@@ -12,10 +12,10 @@ export async function GET() {
 
     const formatted = services.map((s) => ({
       id: s.id,
-      service_name: s.name,
-      service_duration: s.duration,
-      service_price: s.price,
-      service_notes: s.notes,
+      name: s.name,
+      duration: s.duration,
+      price: s.price,
+      notes: s.notes,
     }));
 
     return NextResponse.json(formatted);
