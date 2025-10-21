@@ -6,24 +6,12 @@
    - Environments: .env
 
    Creating an optimized production build ...
- ✓ Compiled successfully in 9.0s
+ ✓ Compiled successfully in 11.0s
    Linting and checking validity of types ...
-   Collecting page data ...
-   Generating static pages (0/22) ...
-   Generating static pages (5/22) 
-   Generating static pages (10/22) 
-   Generating static pages (16/22) 
- ⨯ useSearchParams() should be wrapped in a suspense boundary at page "/error". Read more: https://nextjs.org/docs/messages/missing-suspense-with-csr-bailout
-    at o (C:\Users\frank\Documents\CodingLocal\relaxzy-booking\.next\server\chunks\54.js:3:31188)
-    at p (C:\Users\frank\Documents\CodingLocal\relaxzy-booking\.next\server\chunks\54.js:111:140190)
-    at n (C:\Users\frank\Documents\CodingLocal\relaxzy-booking\.next\server\app\error\page.js:1:2429)
-    at nF (C:\Users\frank\Documents\CodingLocal\relaxzy-booking\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:76:46843)
-    at nH (C:\Users\frank\Documents\CodingLocal\relaxzy-booking\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:76:48618)
-    at nW (C:\Users\frank\Documents\CodingLocal\relaxzy-booking\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:76:67762)
-    at nz (C:\Users\frank\Documents\CodingLocal\relaxzy-booking\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:76:65337)
-    at nB (C:\Users\frank\Documents\CodingLocal\relaxzy-booking\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:76:47195)
-    at nH (C:\Users\frank\Documents\CodingLocal\relaxzy-booking\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:76:48664)
-    at nH (C:\Users\frank\Documents\CodingLocal\relaxzy-booking\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:76:64688)
-Error occurred prerendering page "/error". Read more: https://nextjs.org/docs/messages/prerender-error
-Export encountered an error on /error/page: /error, exiting the build.
- ⨯ Next.js build worker exited with code: 1 and signal: null
+
+Failed to compile.
+
+./src/app/error/page.tsx
+13:18  Error: 'e' is defined but never used.  @typescript-eslint/no-unused-vars
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules

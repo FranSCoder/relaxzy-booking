@@ -1,10 +1,19 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function ErrorPage() {
-    const searchParams = useSearchParams();
-    const msg = searchParams.get("msg") || "Unknown error";
+    const [msg, setMsg] = useState("Unknown error");
+
+    useEffect(() => {
+        try {
+            const params = new URLSearchParams(window.location.search);
+            const m = params.get("msg");
+            if (m) setMsg(m);
+        } catch (e) {
+            // fall back to default
+        }
+    }, []);
 
     return (
         <div className="w-full h-screen flex flex-col items-center justify-center">
