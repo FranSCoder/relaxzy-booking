@@ -11,7 +11,7 @@ export default function ErrorPage() {
             const m = params.get("msg");
             if (m) setMsg(m);
         } catch (e) {
-            // fall back to default
+            console.log(e)
         }
     }, []);
 
