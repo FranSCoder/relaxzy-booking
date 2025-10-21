@@ -518,7 +518,7 @@ const BookingForm = () => {
                     />
 
                     {isSearching && searchResults.length > 0 && (
-                        //Just trying
+                        //Just trying new comment
                         <div className="space-y-2 flex flex-col">
                             {searchResults.map((client) => (
                                 <button
