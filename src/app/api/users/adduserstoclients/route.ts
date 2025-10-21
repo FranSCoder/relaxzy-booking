@@ -8,7 +8,7 @@ const supabaseAdmin = createAdminClient()
 export async function GET() {
   const perPage = 1000;
   let page = 1;
-  let allUsers = [];
+  const allUsers = [];
 
   // Step 1: Fetch all users using pagination
   while (true) {

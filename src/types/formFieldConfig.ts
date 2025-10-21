@@ -3,7 +3,7 @@ export type FormFieldConfigModel<T> = {
   size: number | { [key: string]: number };
   formKey: keyof T;
   label?: string;
-  elements?: any[];
+  elements?: string[];
   text?: string;
   filesMax?: number;
   showTime?: boolean;

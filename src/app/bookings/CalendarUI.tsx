@@ -5,7 +5,6 @@ import { Calendar, luxonLocalizer, View } from "react-big-calendar";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import { BookingWithDetailsDTO } from "@/types/bookings";
 import { DateTime, Settings } from "luxon";
-import { createClient } from "@/utils/supabase/client";
 
 // Set default timezone (safe to do once globally)
 Settings.defaultZone = "Europe/Madrid";

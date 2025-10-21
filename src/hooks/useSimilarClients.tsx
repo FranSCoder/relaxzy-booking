@@ -22,7 +22,7 @@ export function useSimilarClients(formData: Partial<BookingModel>) {
 
   // Create a stable debounced fetch function
   const debouncedFetch = useMemo(() => {
-    return debounce(async (payload: typeof formData) => {
+    return debounce(async (payload: Partial<BookingModel>) => {
       try {
         setLoading(true);
         setError(undefined);
@@ -42,7 +42,7 @@ export function useSimilarClients(formData: Partial<BookingModel>) {
           setError(err?.message ?? "Unknown error");
           setClients([]);
         } else {
-          console.error("Similar clients unknown fetch error:", error);
+          console.error("Similar clients unknown fetch error:", err);
           setError("Unknown error");
           setClients([]);
         }
@@ -58,7 +58,8 @@ export function useSimilarClients(formData: Partial<BookingModel>) {
       setLoading(false);
       return;
     }
-    debouncedFetch(formData);
+    // pass a primitives-only payload so the effect can safely depend on the primitive fields
+    debouncedFetch({ name, surname, email, phone });
     return () => {
       debouncedFetch.cancel();
     };
