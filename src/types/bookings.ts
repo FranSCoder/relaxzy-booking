@@ -31,6 +31,7 @@ export interface BookingWithDetailsDTO {
 
     client_id: string;
     client_name: string;
+    client_surname: string;
     client_email: string;
     client_phone: string;
     client_notes: string;

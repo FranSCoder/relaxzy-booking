@@ -74,7 +74,7 @@ export default function CalendarUI() {
     if (!isClient) return null;
 
     const events = bookings.map((b) => ({
-        title: `${b.client_name} - ${b.service_name}`,
+        title: `${b.client_name} ${b.client_surname} - ${b.service_name}`,
         start: new Date(b.start_time),
         end: new Date(b.end_time),
     }));
