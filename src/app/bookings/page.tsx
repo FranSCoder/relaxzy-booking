@@ -71,8 +71,8 @@ export default function Bookings() {
                 setFormData={setBookingFormData}
                 onAccept={handleAccept}
                 onCancel={handleCancel}
-                acceptText={<><AddCircleIcon /> Añadir</>}
-                cancelText={<><CloseIcon /> Cancelar</>}
+                acceptText={<><AddCircleIcon />Add Booking</>}
+                cancelText={<><CloseIcon />Cancel</>}
             />
         </main>
     );

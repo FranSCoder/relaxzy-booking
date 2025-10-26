@@ -25,3 +25,5 @@ export const FORM_FIELDS_ADD_BOOKING = [
 
 ];
 
+export const AGENDA_LENGTH = 30;
+

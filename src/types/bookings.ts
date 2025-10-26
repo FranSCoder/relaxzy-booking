@@ -15,6 +15,7 @@ export interface BookingModel {
 export interface BookingDTO {
   id: string;
   client_name: string;
+  client_surname: string;
   service_name: string;
   start_time: string | Date;
   end_time: string | Date;
