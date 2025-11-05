@@ -16,9 +16,16 @@ export interface BookingDTO {
   id: string;
   client_name: string;
   client_surname: string;
+  client_phone: string;
+  client_email: string;
   service_name: string;
+  short_service_name: string;
   start_time: string | Date;
   end_time: string | Date;
+  notes: string;
+  status: string;
+  created_at: string | Date;
+  updated_at: string | Date;
 }
 
 export interface BookingWithDetailsDTO {
