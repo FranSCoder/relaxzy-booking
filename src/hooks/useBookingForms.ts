@@ -18,8 +18,8 @@ const initialStateBookingForm: BookingModel = {
 };
 
 export const useBookingForm = () => {
-  const [isOpenBookingDialog, setIsOpenBookingDialog] = useState<boolean>(false);
 
+  const [isOpenBookingDialog, setIsOpenBookingDialog] = useState<boolean>(false);
   const [bookingFormData, setBookingFormData] = useState<BookingModel>(initialStateBookingForm);
   const [availableServices, setAvailableServices] = useState<string[]>([]);
   const [availableDurations, setAvailableDurations] = useState<string[]>([]);
@@ -64,10 +64,15 @@ export const useBookingForm = () => {
         toast.success('The reservation has been created successfully.');
         setIsOpenBookingDialog(false);
         setBookingFormData(initialStateBookingForm);
+        setTimeout(() => {
+        // Example: trigger a manual refresh from your calendar hook
+        window.dispatchEvent(new CustomEvent("refreshCalendarData"));
+      }, 500); // ~0.5 s delay lets joined data propagate
       } catch (err) {
         console.error('Network or server error creating booking', err);
         toast.error('Error creating booking');
       }
+      
     })();
   };
 

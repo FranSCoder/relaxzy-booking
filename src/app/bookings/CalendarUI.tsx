@@ -1,6 +1,9 @@
+//TODO
+// Insert a little delay after adding a booking so the customer names appear right on on the new bookings
+
 "use client";
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { Calendar, luxonLocalizer, View } from "react-big-calendar";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import { DateTime, Settings } from "luxon";
@@ -13,6 +16,16 @@ const localizer = luxonLocalizer(DateTime, { firstDayOfWeek: 1 });
 function CalendarUI() {
   const [view, setView] = useState<View>("week");
   const [date, setDate] = useState(new Date());
+
+  useEffect(() => {
+  const handler = () => {
+    // Simply change date state to trigger your hook re-run
+    setDate(new Date(date)); 
+  };
+
+  window.addEventListener("refreshCalendarData", handler);
+  return () => window.removeEventListener("refreshCalendarData", handler);
+}, [date]);
 
   const onView = useCallback((v: View) => setView(v), []);
   const onNavigate = useCallback((d: Date) => setDate(d), []);

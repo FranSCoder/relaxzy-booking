@@ -1,33 +1,26 @@
+// app/api/bookings/range/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const start = searchParams.get("start");
+  const end = searchParams.get("end");
+
+  if (!start || !end) {
+    return NextResponse.json({ error: "Missing date range" }, { status: 400 });
+  }
+
   try {
-    const { searchParams } = new URL(req.url);
-    const start = searchParams.get("start");
-    const end = searchParams.get("end");
-
-    if (!start || !end) {
-      return NextResponse.json(
-        { error: "Missing start or end query parameters" },
-        { status: 400 }
-      );
-    }
-
     const bookings = await prisma.bookings.findMany({
       where: {
-        start_time: {
-          gte: new Date(start),
-          lte: new Date(end),
-        },
+        start_time: { gte: new Date(start), lte: new Date(end) },
       },
       include: {
         clients: true,
         services: true,
       },
-      orderBy: {
-        start_time: "asc",
-      },
+      orderBy: { start_time: "asc" },
     });
 
     const formatted = bookings.map((b) => ({
