@@ -13,6 +13,7 @@ import {
     Stack,
     Container,
     AppBar,
+    Typography,
 } from "@mui/material";
 import { drawerWidth, menuPages } from "@/constants";
 import Image from "next/image";
@@ -33,6 +34,7 @@ function HeaderButton() {
       variant="contained"
       color="secondary"
       onClick={onButtonClick ?? undefined}
+      sx={{ textTransform: 'uppercase', fontWeight: 'bold', fontSize: '1rem' }}
     >
       {buttonLabel}
     </Button>

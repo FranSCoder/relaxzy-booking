@@ -6,7 +6,7 @@ import { ClientRow, useSimilarClients } from '@/hooks/useSimilarClients';
 import { BookingModel } from '@/types/bookings';
 
 
-type DialogFormProps<T extends Partial<BookingModel>> = {
+type DialogFormProps<T extends BookingModel> = {
   open: boolean;
   title: string;
   formFields: FormFieldConfigModel<T>[];
@@ -18,7 +18,7 @@ type DialogFormProps<T extends Partial<BookingModel>> = {
   cancelText?: React.ReactNode;
 };
 
-export function DialogForm<T extends Partial<BookingModel>>({
+export function DialogForm<T extends BookingModel>({
   open,
   title,
   formFields,
@@ -32,10 +32,10 @@ export function DialogForm<T extends Partial<BookingModel>>({
 
   // inside DialogForm, with setFormData typed to BookingModel setState
   const { clients, loading, error } = useSimilarClients({
-    name: (formData as Partial<BookingModel>).name,
-    surname: (formData as Partial<BookingModel>).surname,
-    email: (formData as Partial<BookingModel>).email,
-    phone: (formData as Partial<BookingModel>).phone,
+    client_name: (formData as BookingModel).client_name,
+    client_surname: (formData as BookingModel).client_surname,
+    client_email: (formData as BookingModel).client_email,
+    client_phone: (formData as BookingModel).client_phone,
   });
 
   const handlePickClient = (c: ClientRow) => {
@@ -46,8 +46,8 @@ export function DialogForm<T extends Partial<BookingModel>>({
       ...prev,
       name: firstName,
       surname: surname,
-      email: c.email ?? (prev.email as string | undefined),
-      phone: c.phone ?? (prev.phone as string | undefined),
+      email: c.email ?? (prev.client_email as string | undefined),
+      phone: c.phone ?? (prev.client_phone as string | undefined),
       notes: prev.notes as string | undefined, // keep existing notes
     } as T));
   };

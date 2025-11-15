@@ -12,17 +12,17 @@ export type ClientRow = {
   created_at?: string | null;
 };
 
-export function useSimilarClients(formData: Partial<BookingModel>) {
+export function useSimilarClients(formData: BookingModel) {
   const [clients, setClients] = useState<ClientRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | undefined>(undefined);
 
   // derive primitive fields so we can depend on stable primitives in the effect
-  const { name, surname, email, phone } = formData;
+  const { client_name, client_surname, client_email, client_phone } = formData;
 
   // Create a stable debounced fetch function
   const debouncedFetch = useMemo(() => {
-    return debounce(async (payload: Partial<BookingModel>) => {
+    return debounce(async (payload: BookingModel) => {
       try {
         setLoading(true);
         setError(undefined);
@@ -53,19 +53,19 @@ export function useSimilarClients(formData: Partial<BookingModel>) {
   }, []);
 
   useEffect(() => {
-    if (!name && !surname && !email && !phone) {
+    if (!client_name && !client_surname && !client_email && !client_phone) {
       setClients([]);
       setLoading(false);
       return;
     }
     // pass a primitives-only payload so the effect can safely depend on the primitive fields
-    debouncedFetch({ name, surname, email, phone });
+    debouncedFetch({ client_name, client_surname, client_email, client_phone });
     return () => {
       debouncedFetch.cancel();
     };
     // Depend on primitive fields (name, surname, email, phone) and the debounced function.
     // Avoid depending on `formData` object reference to prevent unnecessary runs.
-  }, [name, surname, email, phone, debouncedFetch]);
+  }, [client_name, client_surname, client_email, client_phone, debouncedFetch]);
 
   return { clients, loading, error };
 }

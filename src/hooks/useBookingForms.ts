@@ -1,94 +1,100 @@
-import {toast} from 'react-toastify'
-import { useState, useEffect } from 'react';
-import { BookingModel } from '@/types/bookings';
-import { services } from '@prisma/client';
+import { useState } from "react";
+import { toast } from "react-toastify";
+import { BookingDTO } from "@/types/bookings";
 
-const initialStateBookingForm: BookingModel = {
-  name: "",
-  surname: "",
-  phone: "",
-  email: "",
+const initialStateBookingForm: BookingDTO = {
+  client_name: "",
+  client_surname: "",
+  client_phone: "",
+  client_email: "",
   start_time: "",
-  duration: "",
+  end_time: "",
   service_name: "",
   notes: "",
   status: "",
   created_at: "",
-  updated_at: ""
+  updated_at: "",
 };
 
-export const useBookingForm = () => {
+type BookingFormMode = "new" | "edit";
 
-  const [isOpenBookingDialog, setIsOpenBookingDialog] = useState<boolean>(false);
-  const [bookingFormData, setBookingFormData] = useState<BookingModel>(initialStateBookingForm);
-  const [availableServices, setAvailableServices] = useState<string[]>([]);
-  const [availableDurations, setAvailableDurations] = useState<string[]>([]);
+interface UseBookingFormOptions {
+  mode?: BookingFormMode;
+  initialData?: BookingDTO;
+}
 
-  useEffect(() => {
-    const fetchLookups = async () => {
-      try {
-        const res = await fetch('/api/services');
-        if (!res.ok) {
-          console.error('Failed to fetch services lookup:', res.statusText);
-          return;
-        }
-        const services = await res.json();
-        // services expected shape: { service_name, service_duration }
-  const uniqueServices = Array.from(new Set(services.map((s: services) => String(s.name)))).filter(Boolean) as string[]
-  setAvailableServices(uniqueServices);
-  const uniqueDurations = Array.from(new Set(services.map((s: services) => String(s.duration ?? '')))).filter(Boolean) as string[];
-  setAvailableDurations(uniqueDurations);
-      } catch (err) {
-        console.error('Lookup fetch error', err);
+export const useBookingForm = ({
+  mode = "new",
+  initialData,
+}: UseBookingFormOptions = {}) => {
+  const [isOpenBookingDialog, setIsOpenBookingDialog] = useState(false);
+  const [bookingFormData, setBookingFormData] = useState<BookingDTO>(
+    initialData || initialStateBookingForm
+  );
+
+  const [isEditable, setIsEditable] = useState(mode === "new"); 
+
+  const toggleEditMode = () => setIsEditable(prev => !prev);
+
+  const handleAccept = async () => {
+    try {
+      const url =
+        mode === "edit"
+          ? `/api/bookings/${bookingFormData.id}`
+          : "/api/bookings/new";
+
+      const method = mode === "edit" ? "PUT" : "POST";
+
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(bookingFormData),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        console.error(`Booking ${mode} error:`, data);
+        toast.error(data?.error || `Error ${mode === "edit" ? "updating" : "creating"} booking`);
+        return;
       }
-    };
 
-    fetchLookups();
-  }, []);
+      toast.success(
+        mode === "edit"
+          ? "The booking has been updated successfully."
+          : "The booking has been created successfully."
+      );
 
-  const handleAccept = () => {
-    (async () => {
-      try {
-        const res = await fetch('/api/bookings/new', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(bookingFormData),
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          console.error('Booking create error', data);
-          toast.error(data?.error || 'Error creating booking');
-          return;
-        }
-        console.log('A new reservation has been created:', data.booking);
-        toast.success('The reservation has been created successfully.');
-        setIsOpenBookingDialog(false);
-        setBookingFormData(initialStateBookingForm);
-        setTimeout(() => {
-        // Example: trigger a manual refresh from your calendar hook
+      setIsOpenBookingDialog(false);
+      setBookingFormData(initialStateBookingForm);
+      setIsEditable(mode === "new");
+
+      // Refresh calendar
+      setTimeout(() => {
         window.dispatchEvent(new CustomEvent("refreshCalendarData"));
-      }, 500); // ~0.5 s delay lets joined data propagate
-      } catch (err) {
-        console.error('Network or server error creating booking', err);
-        toast.error('Error creating booking');
-      }
-      
-    })();
+      }, 500);
+    } catch (err) {
+      console.error(`Network or server error ${mode} booking`, err);
+      toast.error("Network or server error");
+    }
   };
 
   const handleCancel = () => {
     setIsOpenBookingDialog(false);
     setBookingFormData(initialStateBookingForm);
+    setIsEditable(mode === "new");
   };
 
   return {
+    mode,
     isOpenBookingDialog,
     setIsOpenBookingDialog,
     bookingFormData,
     setBookingFormData,
+    isEditable,
+    setIsEditable,
+    toggleEditMode, // optional convenience
     handleAccept,
     handleCancel,
-    availableServices,
-    availableDurations,
   };
 };

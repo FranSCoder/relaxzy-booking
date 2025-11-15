@@ -1,31 +1,29 @@
-export interface BookingModel {
-    name?: string;
-    surname?: string;
-    phone?: string;
-    email?: string;
-    start_time: string;
-    duration: string;
-    service_name: string;
-    notes?: string;
-    status: string;
-    created_at?: string;
-    updated_at?: string;
+export interface BookingDTO {
+  id?: string;
+  client_name?: string;
+  client_surname?: string;
+  client_phone?: string;
+  client_email?: string;
+  service_name?: string;
+  short_service_name?: string;
+  start_time?: string;
+  end_time?: string;
+  notes?: string;
+  status?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
-export interface BookingDTO {
-  id: string;
-  client_name: string;
-  client_surname: string;
-  client_phone: string;
-  client_email: string;
-  service_name: string;
-  short_service_name: string;
-  start_time: string | Date;
-  end_time: string | Date;
-  notes: string;
-  status: string;
-  created_at: string | Date;
-  updated_at: string | Date;
+export interface BookingModel extends BookingDTO {
+    duration?: string;
+}
+
+export interface BookingEventModel {
+    title: string;
+    start: Date;
+    end: Date;
+    booking: BookingDTO;
+    id: string;
 }
 
 export interface BookingWithDetailsDTO {
@@ -62,3 +60,13 @@ export interface BookingWithDetailsDTO {
     payment_refunded: boolean | null;
     payment_paid_at: string | null;
 };
+
+export interface CalendarUIEventModel {
+    title: string;
+    start: Date;
+    end: Date;
+    booking: BookingDTO;
+    id: string;
+}
+
+export type BookingStatus = 'confirmed' | 'cancelled' | 'pending';
