@@ -1,145 +1,160 @@
 'use client';
 
-import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import debounce from 'lodash.debounce';
 import { clients as ClientType } from '@prisma/client';
+import { TextField, Stack, Paper, Container } from '@mui/material';
+import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 const LIMIT = 100;
 
-export default function UsersPage() {
-  // Memoize supabase client so it remains stable
-  const supabase = useMemo(() => createClient(), []);
+export default function ClientsPage() {
+    const supabase = useMemo(() => createClient(), []);
 
-  // State
-  const [clients, setClients] = useState<ClientType[]>([]);
-  const [page, setPage] = useState(0);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
+    const [clients, setClients] = useState<ClientType[]>([]);
+    const [page, setPage] = useState(0);
+    const [rowCount, setRowCount] = useState(0);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [isSearching, setIsSearching] = useState(false);
 
-  // Load clients function, stable with useCallback
-  const loadClients = useCallback(async (pageToLoad: number) => {
-    const { data, error } = await supabase
-      .from('clients')
-      .select('*')
-      .range(pageToLoad * LIMIT, (pageToLoad + 1) * LIMIT - 1);
+    // -------------------------------
+    // Load paginated clients normally
+    // -------------------------------
+    const loadClients = useCallback(
+        async (pageToLoad: number) => {
+            const from = pageToLoad * LIMIT;
+            const to = from + LIMIT - 1;
 
-    if (error) {
-      console.error(error);
-      return;
+            const { data, error, count } = await supabase.from('clients').select('*', { count: 'exact' }).range(from, to);
+
+            if (error) {
+                console.error(error);
+                return;
+            }
+
+            setClients(data || []);
+            setRowCount(count ?? 0);
+            setPage(pageToLoad);
+            setIsSearching(false);
+        },
+        [supabase]
+    );
+
+    // -------------------------------
+    // Debounced fuzzy search (RPC)
+    // -------------------------------
+    const debouncedSearch = useRef(
+        debounce(async (text: string) => {
+            if (!text) {
+                // Reload first page
+                loadClients(0);
+                setIsSearching(false);
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/clients/search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ searchTerm: text })
+                });
+
+                if (!res.ok) {
+                    throw new Error('Failed to fetch clients');
+                }
+
+                const data: ClientType[] = await res.json();
+
+                setClients(data);
+                setRowCount(data.length);
+                setIsSearching(true);
+            } catch (error) {
+                console.error(error);
+            }
+        }, 300)
+    ).current;
+    function handleSearch(text: string) {
+        setSearchTerm(text);
+        debouncedSearch(text);
     }
 
-  if (!data) return;
-
-  setClients(data as ClientType[]);
-    setPage(pageToLoad);
-    setHasMore(data.length === LIMIT);
-    setIsSearching(false);
-  }, [supabase]);
-
-  // Debounced search function
-  const debouncedSearch = useRef(
-    debounce(async (text: string) => {
-      if (!text) {
+    // Load initial page
+    useEffect(() => {
         loadClients(0);
-        setIsSearching(false);
-        return;
-      }
+    }, [loadClients]);
 
-      const { data, error } = await supabase.rpc('search_clients_fuzzy', {
-        search_term: text,
-      });
+    // -------------------------------
+    // Delete client
+    // -------------------------------
+    async function handleDelete(id: string) {
+        const { error } = await supabase.from('clients').delete().eq('id', id);
 
-      if (error) {
-        console.error(error);
-        return;
-      }
+        if (error) {
+            console.error(error);
+            return;
+        }
 
-  if (!data) return;
+        // Reload after delete
+        if (isSearching) debouncedSearch(searchTerm);
+        else loadClients(page);
+    }
 
-  setClients(data as ClientType[]);
-      setIsSearching(true);
-      setHasMore(false);
-    }, 300)
-  ).current;
+    // -------------------------------
+    // Columns for DataGrid
+    // -------------------------------
+    const columns: GridColDef[] = [
+        { field: 'name', headerName: 'Name', flex: 1 },
+        { field: 'surname', headerName: 'Surname', flex: 1 },
+        { field: 'email', headerName: 'Email', flex: 1 },
+        { field: 'phone', headerName: 'Phone', flex: 1 },
+        { field: 'notes', headerName: 'Notes', flex: 1 },
 
-  // Load first page on mount
-  useEffect(() => {
-    loadClients(0);
-  }, [loadClients]);
-
-  // Handle search input
-  function handleSearch(text: string) {
-    setSearchTerm(text);
-    debouncedSearch(text);
-  }
-
-  // Render table
-  function renderTable(data: ClientType[]) {
-    if (data.length === 0) return <p>No clients found.</p>;
+        // Actions column
+        {
+            field: 'actions',
+            type: 'actions',
+            headerName: 'Actions',
+            width: 110,
+            getActions: (params) => [
+                <GridActionsCellItem
+                    icon={<EditIcon color='primary' />}
+                    label='Edit'
+                    onClick={() => console.log('Edit clicked', params.row)}
+                    key='edit'
+                />,
+                <GridActionsCellItem
+                    icon={<DeleteIcon color='error' />}
+                    label='Delete'
+                    onClick={() => handleDelete(params.row.id)}
+                    key='delete'
+                />
+            ]
+        }
+    ];
 
     return (
-      <table className="w-full table-auto border-collapse border">
-        <thead>
-          <tr>
-            {Object.keys(data[0])
-              .filter((key) => key !== 'id')
-              .map((key) => (
-                <th key={key} className="border px-2 py-1 text-left capitalize">
-                  {key.replace(/_/g, ' ')}
-                </th>
-              ))}
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((client) => (
-            <tr key={client.id}>
-              {Object.entries(client)
-                .filter(([key]) => key !== 'id')
-                .map(([key, val]) => (
-                  <td key={key} className="border px-2 py-1">
-                    {String(val)}
-                  </td>
-                ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+        <Container sx={{ py: 3 }} disableGutters>
+            {/* Search */}
+            <Stack spacing={2} mb={2}>
+                <TextField label='Search clients' value={searchTerm} onChange={(e) => handleSearch(e.target.value)} fullWidth />
+            </Stack>
+
+            <Paper elevation={2} sx={{ maxHeight: 'calc(100vh - 186px)', display: 'flex', flexDirection: 'column' }}>
+                <DataGrid
+                    rows={clients}
+                    columns={columns}
+                    getRowId={(row) => row.id}
+                    rowCount={rowCount}
+                    pageSizeOptions={[LIMIT]}
+                    paginationMode='server'
+                    pagination
+                    paginationModel={{ page, pageSize: LIMIT }}
+                    onPaginationModelChange={(model) => loadClients(model.page)}
+                />
+            </Paper>
+        </Container>
     );
-  }
-
-  return (
-    <div className="p-4">
-      <input
-        type="text"
-        value={searchTerm}
-        onChange={(e) => handleSearch(e.target.value)}
-        placeholder="Search clients..."
-        className="w-full p-2 mb-4 border rounded"
-      />
-
-      {renderTable(clients)}
-
-      {!isSearching && (
-        <div className="flex justify-between mt-4">
-          <button
-            onClick={() => loadClients(Math.max(0, page - 1))}
-            disabled={page === 0}
-            className="px-4 py-2 border rounded disabled:opacity-50"
-          >
-            Previous
-          </button>
-
-          <button
-            onClick={() => loadClients(page + 1)}
-            disabled={!hasMore}
-            className="px-4 py-2 border rounded disabled:opacity-50"
-          >
-            Next
-          </button>
-        </div>
-      )}
-    </div>
-  );
 }
