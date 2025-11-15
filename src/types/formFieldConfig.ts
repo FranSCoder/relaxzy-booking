@@ -1,13 +1,14 @@
 export type FormFieldConfigModel<T> = {
-  type: string;
-  size: number | { [key: string]: number };
-  formKey: keyof T;
-  label?: string;
-  elements?: string[];
-  text?: string;
-  filesMax?: number;
-  showTime?: boolean;
-  autoFocus?: boolean;
-  isEditable?: boolean;
-  defaultEnabled?: boolean;
+    type: string;
+    size: number | { [key: string]: number };
+    formKey: keyof T;
+    label?: string;
+    elements?: string[];
+    text?: string;
+    filesMax?: number;
+    showTime?: boolean;
+    autoFocus?: boolean;
+    allowsEnabled?: boolean;
+    allowsDisabled?: boolean;
+    defaultEnabled?: boolean;
 };

@@ -4,7 +4,7 @@ import { DialogForm } from '@/components/DialogForm';
 import CalendarUI from './CalendarUI';
 import { useBookingForm } from '@/hooks/useBookingForms';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
-import EditIcon from '@mui/icons-material/Edit';
+import SaveIcon from '@mui/icons-material/Save';
 import CloseIcon from '@mui/icons-material/Close';
 import { BookingDTO, BookingModel } from '@/types/bookings';
 import { FORM_FIELDS_ADD_BOOKING, FORM_FIELDS_EDIT_BOOKING } from '@/constants';
@@ -78,9 +78,10 @@ export default function Bookings() {
                 onAccept={editBookingForm.handleAccept}
                 onCancel={editBookingForm.handleCancel}
                 // prettier-ignore
-                acceptText={<><EditIcon />Edit Booking</>}
+                acceptText={<><SaveIcon />Save</>}
                 // prettier-ignore
                 cancelText={<><CloseIcon />Cancel</>}
+                isProtected={true}
             />
         </main>
     );
