@@ -8,4 +8,6 @@ export type FormFieldConfigModel<T> = {
   filesMax?: number;
   showTime?: boolean;
   autoFocus?: boolean;
+  isEditable?: boolean;
+  defaultEnabled?: boolean;
 };

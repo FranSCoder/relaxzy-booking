@@ -1,91 +1,85 @@
-"use client"
+'use client';
 
-import { DialogForm } from "@/components/DialogForm";
-import CalendarUI from "./CalendarUI";
-import { useBookingForm } from "@/hooks/useBookingForms";
+import { DialogForm } from '@/components/DialogForm';
+import CalendarUI from './CalendarUI';
+import { useBookingForm } from '@/hooks/useBookingForms';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import EditIcon from '@mui/icons-material/Edit';
 import CloseIcon from '@mui/icons-material/Close';
-import { BookingDTO, BookingModel } from "@/types/bookings";
-import { FORM_FIELDS_ADD_BOOKING } from "@/constants";
-import { FormFieldConfigModel } from "@/types/formFieldConfig";
-import { useLayout } from "../context/LayoutContext";
-import { useEffect, useState } from "react";
-import { useServiceLookups } from "@/hooks/useServiceLookups";
+import { BookingDTO, BookingModel } from '@/types/bookings';
+import { FORM_FIELDS_ADD_BOOKING, FORM_FIELDS_EDIT_BOOKING } from '@/constants';
+import { FormFieldConfigModel } from '@/types/formFieldConfig';
+import { useLayout } from '../context/LayoutContext';
+import { useEffect, useState } from 'react';
+import { useServiceLookups } from '@/hooks/useServiceLookups';
+import { ClientRow, useSimilarClients } from '@/hooks/useSimilarClients';
+import { Button, Container, Typography } from '@mui/material';
+import ClientSearch from './ClientSearch';
 
 export default function Bookings() {
+    const { setButtonLabel, setOnButtonClick, selectedBooking } = useLayout();
 
-    const { setButtonLabel, setOnButtonClick, selectedBooking, setSelectedBooking } = useLayout();
-    
+    const newBookingForm = useBookingForm({ mode: 'new' });
+    const editBookingForm = useBookingForm({ mode: 'edit', initialData: selectedBooking });
 
-    const { availableServices, availableDurations  } = useServiceLookups();
-
-    const newBookingForm = useBookingForm({mode: 'new'})
-    const editBookingForm = useBookingForm({ mode: "edit", initialData: selectedBooking })
-
-    // Build a local copy of form fields where we inject dynamic elements
-    const formFieldsLocal = FORM_FIELDS_ADD_BOOKING.map(field => {
-        if (field.formKey === 'service_name') {
-            return {
-                ...field,
-                elements: availableServices.length
-                    ? [
-                        ...availableServices,
-                        ...field.elements!.filter(el => !availableServices.includes(el))
-                    ]
-                    : field.elements
-            };
-        }
-        if (field.formKey === 'duration') {
-            return {
-                ...field,
-                elements: availableDurations.length
-                    ? [
-                        ...availableDurations,
-                        ...field.elements!.filter(el => !availableDurations.includes(el))
-                    ]
-                    : field.elements
-            };
-        }
-        return field;
+    const { clients, loading, error } = useSimilarClients({
+        client_name: (newBookingForm.bookingFormData as BookingModel).client_name,
+        client_surname: (newBookingForm.bookingFormData as BookingModel).client_surname,
+        client_email: (newBookingForm.bookingFormData as BookingModel).client_email,
+        client_phone: (newBookingForm.bookingFormData as BookingModel).client_phone
     });
 
     useEffect(() => {
-        setButtonLabel("New Booking");
-        setOnButtonClick(() => () => newBookingForm.setIsOpenBookingDialog(prev => !prev));
+        setButtonLabel('New Booking');
+        setOnButtonClick(() => () => newBookingForm.setIsOpenBookingDialog((prev) => !prev));
         return () => {
-            setButtonLabel("");
+            setButtonLabel('');
             setOnButtonClick(null);
-        }
+        };
     }, [setButtonLabel, setOnButtonClick, newBookingForm.setIsOpenBookingDialog]);
 
     return (
-        <main className="p-4">
-            <CalendarUI 
-            setBookingFormData={editBookingForm.setBookingFormData}
-            setIsOpenBookingDialog={editBookingForm.setIsOpenBookingDialog}
-            setIsEditable={editBookingForm.setIsEditable}
+        <main className='p-4'>
+            <CalendarUI
+                setBookingFormData={editBookingForm.setBookingFormData}
+                setIsOpenBookingDialog={editBookingForm.setIsOpenBookingDialog}
+                setIsEditable={editBookingForm.setIsEditable}
             />
             <DialogForm<BookingModel>
                 open={newBookingForm.isOpenBookingDialog}
-                title="Add Booking"
-                formFields={formFieldsLocal as FormFieldConfigModel<BookingModel>[]}
+                title='Add Booking'
+                formFields={FORM_FIELDS_ADD_BOOKING as FormFieldConfigModel<BookingModel>[]}
                 formData={newBookingForm.bookingFormData}
                 setFormData={newBookingForm.setBookingFormData}
                 onAccept={newBookingForm.handleAccept}
                 onCancel={newBookingForm.handleCancel}
+                // prettier-ignore
                 acceptText={<><AddCircleIcon />Add Booking</>}
+                // prettier-ignore
                 cancelText={<><CloseIcon />Cancel</>}
+                otherSubComponents={[
+                    ClientSearch({
+                        newBookingForm: {
+                            bookingFormData: newBookingForm.bookingFormData,
+                            setBookingFormData: newBookingForm.setBookingFormData,
+                        },
+                        clients,
+                        loading,
+                        error
+                    })
+                ]}
             />
             <DialogForm<BookingModel>
                 open={editBookingForm.isOpenBookingDialog}
-                title="Booking Details"
-                formFields={formFieldsLocal as FormFieldConfigModel<BookingModel>[]}
+                title='Booking Details'
+                formFields={FORM_FIELDS_EDIT_BOOKING as FormFieldConfigModel<BookingModel>[]}
                 formData={editBookingForm.bookingFormData}
                 setFormData={editBookingForm.setBookingFormData}
                 onAccept={editBookingForm.handleAccept}
                 onCancel={editBookingForm.handleCancel}
+                // prettier-ignore
                 acceptText={<><EditIcon />Edit Booking</>}
+                // prettier-ignore
                 cancelText={<><CloseIcon />Cancel</>}
             />
         </main>

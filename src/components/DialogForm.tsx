@@ -16,6 +16,7 @@ type DialogFormProps<T extends BookingModel> = {
   onCancel: () => void;
   acceptText?: React.ReactNode;
   cancelText?: React.ReactNode;
+  otherSubComponents?: React.ReactNode[];
 };
 
 export function DialogForm<T extends BookingModel>({
@@ -28,29 +29,13 @@ export function DialogForm<T extends BookingModel>({
   onCancel,
   acceptText = 'Aceptar',
   cancelText = 'Cancelar',
+  otherSubComponents
 }: DialogFormProps<T>) {
 
   // inside DialogForm, with setFormData typed to BookingModel setState
-  const { clients, loading, error } = useSimilarClients({
-    client_name: (formData as BookingModel).client_name,
-    client_surname: (formData as BookingModel).client_surname,
-    client_email: (formData as BookingModel).client_email,
-    client_phone: (formData as BookingModel).client_phone,
-  });
+  
 
-  const handlePickClient = (c: ClientRow) => {
-    // map client -> booking form model using separate name/surname fields
-    const firstName = c.name ?? "";
-    const surname = c.surname ?? "";
-    setFormData((prev: T) => ({
-      ...prev,
-      name: firstName,
-      surname: surname,
-      email: c.email ?? (prev.client_email as string | undefined),
-      phone: c.phone ?? (prev.client_phone as string | undefined),
-      notes: prev.notes as string | undefined, // keep existing notes
-    } as T));
-  };
+  
 
   return (
     <Dialog
@@ -96,18 +81,11 @@ export function DialogForm<T extends BookingModel>({
           {acceptText}
         </Button>
       </DialogActions>
-      {loading && <Typography variant="body2">Searching...</Typography>}
-      {error && <Typography color="error">{error}</Typography>}
-      {clients.length > 0 && (
-        <Container sx={{ mt: 2 }}>
-          <Typography variant="subtitle2">Possible existing clients:</Typography>
-          {clients.map((c) => (
-            <Button key={c.id} onClick={() => handlePickClient(c)} sx={{ textTransform: "none" }}>
-              {`${c.name ?? ''} ${c.surname ?? ''}`.trim()} – {c.phone || c.email}
-            </Button>
-          ))}
+      {otherSubComponents && otherSubComponents.map((component, index) => (
+        <Container key={index} sx={{ padding: '1rem' }}>
+          {component}
         </Container>
-      )}
+      ))}
     </Dialog>
   );
 }

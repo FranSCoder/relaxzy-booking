@@ -4,7 +4,12 @@ import { Prisma } from "@prisma/client";
 
 export async function POST(req: Request) {
   const body = await req.json();
-  const { name, surname, email, phone } = body;
+  const {
+  client_name: name,
+  client_surname: surname,
+  client_email: email,
+  client_phone: phone
+} = body;
 
   if (!name && !surname && !email && !phone) {
     return NextResponse.json([], { status: 200 });
