@@ -13,10 +13,10 @@ export async function POST(req: NextRequest) {
   const clients = await prisma.clients.findMany({
     where: {
       OR: [
-        { name: { contains: searchTerm, mode: "insensitive" } },
-        { surname: { contains: searchTerm, mode: "insensitive" } },
-        { email: { contains: searchTerm, mode: "insensitive" } },
-        { phone: { contains: searchTerm, mode: "insensitive" } },
+        { client_name: { contains: searchTerm, mode: "insensitive" } },
+        { client_surname: { contains: searchTerm, mode: "insensitive" } },
+        { client_email: { contains: searchTerm, mode: "insensitive" } },
+        { client_phone: { contains: searchTerm, mode: "insensitive" } },
       ]
     },
     take: CLIENTS_FETCH_LIMIT

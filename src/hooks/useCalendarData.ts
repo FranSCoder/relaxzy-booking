@@ -1,14 +1,14 @@
 // hooks/useCalendarData.ts
 import { useState, useEffect, useCallback } from "react";
 import { DateTime } from "luxon";
-import { BookingDTO } from "@/types/bookings";
+import { BookingModel } from "@/types/bookings";
 import { AGENDA_LENGTH } from "@/constants";
 
 export type Range = { start: DateTime; end: DateTime };
 type CalendarView = "month" | "week" | "day" | "agenda" | "work_week";
 
 export function useCalendarData(date: Date, view: CalendarView) {
-  const [bookings, setBookings] = useState<BookingDTO[]>([]);
+  const [bookings, setBookings] = useState<BookingModel[]>([]);
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState("");
 
@@ -38,7 +38,15 @@ export function useCalendarData(date: Date, view: CalendarView) {
         `/api/bookings/range?start=${encodeURIComponent(range.start.toISO()!)}&end=${encodeURIComponent(range.end.toISO()!)}`
       );
       if (!response.ok) throw new Error(await response.text());
-      const data: BookingDTO[] = await response.json();
+      const data: BookingModel[] = await response.json();
+
+      //add duration to bookings
+      data.map((booking) => {
+        const start = new Date(booking.start_time!)
+        const end = new Date(booking.end_time!)
+        booking.duration = ((end.getTime() - start.getTime()) / (1000 * 60)).toString()
+      })
+
       setBookings(data);
       setFetchError("");
     } catch (err: any) {

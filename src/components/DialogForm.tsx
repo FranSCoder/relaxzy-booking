@@ -5,6 +5,7 @@ import { FormFieldConfigModel } from '@/types/formFieldConfig';
 import { ClientRow, useSimilarClients } from '@/hooks/useSimilarClients';
 import { BookingModel } from '@/types/bookings';
 import EditIcon from '@mui/icons-material/Edit';
+import { useLayout } from '@/app/context/LayoutContext';
 
 type DialogFormProps<T extends BookingModel> = {
     open: boolean;
@@ -12,12 +13,11 @@ type DialogFormProps<T extends BookingModel> = {
     formFields: FormFieldConfigModel<T>[];
     formData: T;
     setFormData: React.Dispatch<React.SetStateAction<T>>;
-    onAccept: () => void;
-    onCancel: () => void;
-    acceptText?: React.ReactNode;
-    cancelText?: React.ReactNode;
+    handleCancel: () => void;
     otherSubComponents?: React.ReactNode[];
-    isProtected?: boolean;
+    acceptButton?: React.ReactNode;
+    cancelButton?: React.ReactNode;
+    deleteButton?: React.ReactNode;
 };
 
 export function DialogForm<T extends BookingModel>({
@@ -26,14 +26,13 @@ export function DialogForm<T extends BookingModel>({
     formFields,
     formData,
     setFormData,
-    onAccept,
-    onCancel,
-    acceptText = 'Aceptar',
-    cancelText = 'Cancelar',
+    handleCancel,
     otherSubComponents,
-    isProtected = false
+    acceptButton = <></>,
+    cancelButton = <></>,
+    deleteButton = <></>
 }: DialogFormProps<T>) {
-    const [isEditing, setIsEditing] = useState(false);
+    const { isEditing, setIsEditing } = useLayout();
 
     function computeIsDisabled<T>(field: FormFieldConfigModel<T>, isEditing: boolean): boolean {
         if (!field.allowsEnabled) return true;
@@ -45,7 +44,7 @@ export function DialogForm<T extends BookingModel>({
         <Dialog
             open={open}
             onClose={() => {
-                onCancel();
+                handleCancel();
                 setIsEditing(false);
             }}
             maxWidth='md'
@@ -81,31 +80,12 @@ export function DialogForm<T extends BookingModel>({
                 </Grid>
             </DialogContent>
 
-            <DialogActions>
-                <Button
-                    sx={{ color: 'error.main', gap: 1 }}
-                    onClick={() => {
-                        onCancel();
-                        setIsEditing(false);
-                    }}>
-                    {cancelText}
-                </Button>
-                {isProtected ? (
-                    isEditing ? (
-                        <Button sx={{ color: 'primary.main', gap: 1 }} onClick={onAccept}>
-                            {acceptText}
-                        </Button>
-                    ) : (
-                        <Button sx={{ color: 'primary.main', gap: 1 }} onClick={() => setIsEditing((prev) => !prev)}>
-                            <EditIcon />
-                            Edit
-                        </Button>
-                    )
-                ) : (
-                    <Button sx={{ color: 'primary.main', gap: 1 }} onClick={onAccept}>
-                        {acceptText}
-                    </Button>
-                )}
+            <DialogActions sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                {deleteButton}
+                <Container sx={{ display: 'flex', justifyContent: 'flex-end'}}>
+                    {cancelButton}
+                    {acceptButton}
+                </Container>
             </DialogActions>
 
             {otherSubComponents &&

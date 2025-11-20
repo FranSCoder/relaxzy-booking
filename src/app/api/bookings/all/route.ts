@@ -18,8 +18,8 @@ export async function GET() {
     // Format data to match BookingWithDetailsDTO
     const formatted = bookings.map((b) => ({
       id: b.id,
-      client_name: b.clients?.name ?? "Unknown",
-      client_surname: b.clients?.surname,
+      client_name: b.clients?.client_name ?? "Unknown",
+      client_surname: b.clients?.client_surname,
       service_name: b.services?.name ?? "Unknown",
       start_time: b.start_time,
       end_time: b.end_time,

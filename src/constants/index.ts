@@ -21,6 +21,10 @@ export const AGENDA_LENGTH = 30;
 
 export const CLIENTS_FETCH_LIMIT = 100;
 
+export const PROTECTED_FIELDS = new Set(["id", "created_at"]);
+
+export const PROTECTED_FIELDS_FOR_EDIT_BOOKING = new Set(["client_name", "client_surname", "client_phone", "client_email"]);
+
 export const FORM_FIELDS_ADD_BOOKING: FormFieldConfigModel<BookingModel>[] = [
   { formKey: 'client_name', label: 'Name', size: 6, type: 'textfield', autoFocus: true, allowsDisabled: false, allowsEnabled: true },
   { formKey: 'client_surname', label: 'Surname(s)', size: 6, type: 'textfield', allowsDisabled: false, allowsEnabled: true },

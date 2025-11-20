@@ -25,10 +25,10 @@ export async function GET(req: NextRequest) {
 
     const formatted = bookings.map((b) => ({
       id: b.id,
-      client_name: b.clients?.name ?? "Unknown",
-      client_surname: b.clients?.surname,
-      client_phone: b.clients?.phone ?? "Unknown",
-      client_email: b.clients?.email ?? "Unknown",
+      client_name: b.clients?.client_name ?? "Unknown",
+      client_surname: b.clients?.client_surname,
+      client_phone: b.clients?.client_phone ?? "Unknown",
+      client_email: b.clients?.client_email ?? "Unknown",
       service_name: b.services?.name ?? "Unknown",
       short_service_name: b.services?.short_name ?? "Unknown",
       start_time: b.start_time,

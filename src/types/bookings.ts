@@ -1,17 +1,17 @@
 export interface BookingDTO {
-  id?: string;
-  client_name?: string;
-  client_surname?: string;
-  client_phone?: string;
-  client_email?: string;
-  service_name?: string;
-  short_service_name?: string;
-  start_time?: string;
-  end_time?: string;
-  notes?: string;
-  status?: string;
-  created_at?: string;
-  updated_at?: string;
+    id?: string;
+    client_name?: string;
+    client_surname?: string;
+    client_phone?: string;
+    client_email?: string;
+    service_name?: string;
+    short_service_name?: string;
+    start_time?: string;
+    end_time?: string;
+    notes?: string;
+    status?: string;
+    created_at?: string;
+    updated_at?: string;
 }
 
 export interface BookingModel extends BookingDTO {
@@ -54,12 +54,12 @@ export interface BookingWithDetailsDTO {
     service_name: string;
     service_created_at: string;
 
-    payment_id: string | null;         // payments are optional
+    payment_id: string | null; // payments are optional
     payment_amount: number | null;
     payment_method: string | null;
     payment_refunded: boolean | null;
     payment_paid_at: string | null;
-};
+}
 
 export interface CalendarUIEventModel {
     title: string;

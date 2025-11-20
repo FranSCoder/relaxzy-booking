@@ -5,34 +5,33 @@ import { Prisma } from "@prisma/client";
 export async function POST(req: Request) {
   const body = await req.json();
   const {
-  client_name: name,
-  client_surname: surname,
-  client_email: email,
-  client_phone: phone
+  client_name,
+  client_surname,
+  client_email,
+  client_phone
 } = body;
 
-  if (!name && !surname && !email && !phone) {
+  if (!client_name && !client_surname && !client_email && !client_phone) {
     return NextResponse.json([], { status: 200 });
   }
 
 const filters: Prisma.clientsWhereInput[] = [];
 
-// search by name or surname (case-insensitive contains)
-if (name) filters.push({ name: { contains: name, mode: "insensitive" } });
-if (surname) filters.push({ surname: { contains: surname, mode: "insensitive" } });
-if (email) filters.push({ email: { contains: email, mode: "insensitive" } });
-if (phone) filters.push({ phone: { contains: phone, mode: "insensitive" } });
+if (client_name) filters.push({ client_name: { contains: client_name, mode: "insensitive" } });
+if (client_surname) filters.push({ client_surname: { contains: client_surname, mode: "insensitive" } });
+if (client_email) filters.push({ client_email: { contains: client_email, mode: "insensitive" } });
+if (client_phone) filters.push({ client_phone: { contains: client_phone, mode: "insensitive" } });
 
   try {
     const clients = await prisma.clients.findMany({
       where: { OR: filters },
       select: {
         id: true,
-        name: true,
-        surname: true,
-        email: true,
-        phone: true,
-        notes: true,
+        client_name: true,
+        client_surname: true,
+        client_email: true,
+        client_phone: true,
+        client_notes: true,
         created_at: true,
         updated_at: true,
       },

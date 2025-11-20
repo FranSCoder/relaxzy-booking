@@ -4,11 +4,11 @@ import { BookingModel } from "@/types/bookings";
 
 export type ClientRow = {
   id: string;
-  name?: string | null;
-  surname?: string | null;
-  email?: string | null;
-  phone?: string | null;
-  notes?: string | null;
+  client_name?: string | null;
+  client_surname?: string | null;
+  client_email?: string | null;
+  client_phone?: string | null;
+  client_notes?: string | null;
   created_at?: string | null;
 };
 

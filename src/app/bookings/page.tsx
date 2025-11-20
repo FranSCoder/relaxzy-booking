@@ -4,6 +4,7 @@ import { DialogForm } from '@/components/DialogForm';
 import CalendarUI from './CalendarUI';
 import { useBookingForm } from '@/hooks/useBookingForms';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
+import DeleteIcon from '@mui/icons-material/Delete';
 import SaveIcon from '@mui/icons-material/Save';
 import CloseIcon from '@mui/icons-material/Close';
 import { BookingDTO, BookingModel } from '@/types/bookings';
@@ -15,9 +16,12 @@ import { useServiceLookups } from '@/hooks/useServiceLookups';
 import { ClientRow, useSimilarClients } from '@/hooks/useSimilarClients';
 import { Button, Container, Typography } from '@mui/material';
 import ClientSearch from './ClientSearch';
+import EditIcon from '@mui/icons-material/Edit';
+import DialogDeletion from '@/components/DialogDeletion';
 
 export default function Bookings() {
-    const { setButtonLabel, setOnButtonClick, selectedBooking } = useLayout();
+    const { setButtonLabel, setOnButtonClick, selectedBooking, isEditing, setIsEditing } = useLayout();
+    const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
     const newBookingForm = useBookingForm({ mode: 'new' });
     const editBookingForm = useBookingForm({ mode: 'edit', initialData: selectedBooking });
@@ -51,22 +55,42 @@ export default function Bookings() {
                 formFields={FORM_FIELDS_ADD_BOOKING as FormFieldConfigModel<BookingModel>[]}
                 formData={newBookingForm.bookingFormData}
                 setFormData={newBookingForm.setBookingFormData}
-                onAccept={newBookingForm.handleAccept}
-                onCancel={newBookingForm.handleCancel}
-                // prettier-ignore
-                acceptText={<><AddCircleIcon />Add Booking</>}
-                // prettier-ignore
-                cancelText={<><CloseIcon />Cancel</>}
+                handleCancel={newBookingForm.handleCancel}
+                cancelButton={
+                    <Button
+                        sx={{ color: 'error.main', gap: 1 }}
+                        onClick={() => {
+                            newBookingForm.handleCancel();
+                            setIsEditing(false);
+                        }}>
+                        {
+                            <>
+                                <CloseIcon />
+                                Cancel
+                            </>
+                        }
+                    </Button>
+                }
+                acceptButton={
+                    <Button sx={{ color: 'primary.main', gap: 1 }} onClick={() => newBookingForm.handleAccept()}>
+                        {
+                            <>
+                                <AddCircleIcon />
+                                Add Booking
+                            </>
+                        }
+                    </Button>
+                }
                 otherSubComponents={[
-                    ClientSearch({
-                        newBookingForm: {
+                    <ClientSearch
+                        newBookingForm={{
                             bookingFormData: newBookingForm.bookingFormData,
-                            setBookingFormData: newBookingForm.setBookingFormData,
-                        },
-                        clients,
-                        loading,
-                        error
-                    })
+                            setBookingFormData: newBookingForm.setBookingFormData
+                        }}
+                        clients={clients}
+                        loading={loading}
+                        error={error}
+                    />
                 ]}
             />
             <DialogForm<BookingModel>
@@ -75,13 +99,66 @@ export default function Bookings() {
                 formFields={FORM_FIELDS_EDIT_BOOKING as FormFieldConfigModel<BookingModel>[]}
                 formData={editBookingForm.bookingFormData}
                 setFormData={editBookingForm.setBookingFormData}
-                onAccept={editBookingForm.handleAccept}
-                onCancel={editBookingForm.handleCancel}
-                // prettier-ignore
-                acceptText={<><SaveIcon />Save</>}
-                // prettier-ignore
-                cancelText={<><CloseIcon />Cancel</>}
-                isProtected={true}
+                handleCancel={editBookingForm.handleCancel}
+                deleteButton={
+                    <Button
+                        color='error'
+                        sx={{
+                            gap: 1
+                        }}
+                        variant='contained'
+                        onClick={() => setConfirmDeleteOpen(true)}>
+                        <>
+                            <DeleteIcon />
+                            Delete
+                        </>
+                    </Button>
+                }
+                cancelButton={
+                    <Button
+                        sx={{ color: 'error.main', gap: 1 }}
+                        onClick={() => {
+                            editBookingForm.handleCancel();
+                            setIsEditing(false);
+                        }}>
+                        {
+                            <>
+                                <CloseIcon />
+                                Cancel
+                            </>
+                        }
+                    </Button>
+                }
+                acceptButton={
+                    isEditing ? (
+                        <Button
+                            sx={{ color: 'primary.main', gap: 1 }}
+                            onClick={() => {
+                                setIsEditing(false);
+                                editBookingForm.handleAccept();
+                            }}>
+                            {
+                                <>
+                                    <SaveIcon />
+                                    Save
+                                </>
+                            }
+                        </Button>
+                    ) : (
+                        <Button sx={{ color: 'primary.main', gap: 1 }} onClick={() => setIsEditing(true)}>
+                            {
+                                <>
+                                    <EditIcon /> Edit
+                                </>
+                            }
+                        </Button>
+                    )
+                }
+            />
+            <DialogDeletion
+                confirmDeleteOpen={confirmDeleteOpen}
+                setConfirmDeleteOpen={setConfirmDeleteOpen}
+                handleDelete={editBookingForm.handleDelete}
             />
         </main>
     );

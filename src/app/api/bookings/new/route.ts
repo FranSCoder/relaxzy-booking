@@ -2,10 +2,10 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 type Body = {
-  name?: string;
-  surname?: string;
-  phone?: string;
-  email?: string;
+  client_name?: string;
+  client_surname?: string;
+  client_phone?: string;
+  client_email?: string;
   start_time: string; // ISO
   duration?: string; // minutes as string or number
   service_name?: string;
@@ -26,16 +26,16 @@ export async function POST(request: Request) {
 
     // 1) find or create client
     let client;
-    if (body.email) {
-      client = await prisma.clients.findFirst({ where: { email: body.email } });
+    if (body.client_email) {
+      client = await prisma.clients.findFirst({ where: { client_email: body.client_email } });
     }
-    if (!client && body.phone) {
-      client = await prisma.clients.findFirst({ where: { phone: body.phone } });
+    if (!client && body.client_phone) {
+      client = await prisma.clients.findFirst({ where: { client_phone: body.client_phone } });
     }
     if (!client) {
-      const name = body.name ?? '';
-      const surname = body.surname ?? '';
-      client = await prisma.clients.create({ data: { name: name || null, surname: surname || null, email: body.email ?? null, phone: body.phone ?? null } });
+      const client_name = body.client_name ?? '';
+      const client_surname = body.client_surname ?? '';
+      client = await prisma.clients.create({ data: { client_name: client_name || null, client_surname: client_surname || null, client_email: body.client_email ?? null, client_phone: body.client_phone ?? null } });
     }
 
     // 2) find service

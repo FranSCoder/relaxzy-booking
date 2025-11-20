@@ -15,17 +15,14 @@ type ClientSearchProps = {
 
 const ClientSearch = ({ newBookingForm, clients, loading, error }: ClientSearchProps) => {
     const handlePickClient = (c: ClientRow) => {
-        // map client -> booking form model using separate name/surname fields
-        const firstName = c.name ?? '';
-        const surname = c.surname ?? '';
         newBookingForm.setBookingFormData(
             (prev: BookingModel) =>
                 ({
                     ...prev,
-                    name: firstName,
-                    surname: surname,
-                    email: c.email ?? (prev.client_email as string | undefined),
-                    phone: c.phone ?? (prev.client_phone as string | undefined),
+                    client_name: c.client_name ?? '',
+                    client_surname: c.client_surname ?? '',
+                    client_email: c.client_email ?? (prev.client_email as string | undefined),
+                    client_phone: c.client_phone ?? (prev.client_phone as string | undefined),
                     notes: prev.notes as string | undefined // keep existing notes
                 } as BookingModel)
         );
@@ -40,7 +37,7 @@ const ClientSearch = ({ newBookingForm, clients, loading, error }: ClientSearchP
                     <Typography variant='subtitle2'>Possible existing clients:</Typography>
                     {clients.map((c) => (
                         <Button key={c.id} onClick={() => handlePickClient(c)} sx={{ textTransform: 'none' }}>
-                            {`${c.name ?? ''} ${c.surname ?? ''}`.trim()} – {c.phone || c.email}
+                            {`${c.client_name ?? ''} ${c.client_surname ?? ''}`.trim()} – {c.client_phone || c.client_email}
                         </Button>
                     ))}
                 </Container>

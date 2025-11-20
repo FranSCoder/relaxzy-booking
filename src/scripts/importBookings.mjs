@@ -163,15 +163,15 @@ async function importBookings() {
                     ? await supabase
                         .from("clients")
                         .select("id")
-                        .eq("phone", row.Phone)
+                        .eq("client_phone", row.Phone)
                         .single()
                     : { data: null, error: null };
 
                 if (!client && row.Name) {
                     const { data: nameMatch } = await supabase
                         .from("clients")
-                        .select("id, phone")
-                        .eq("name", row.Name)
+                        .select("id, client_phone")
+                        .eq("client_name", row.Name)
                         .maybeSingle();
 
                     if (nameMatch) {
@@ -205,9 +205,9 @@ async function importBookings() {
                             await supabase
                             .from("clients")
                             .insert({
-                                name: row.Name || null,
-                                surname: null,
-                                phone: row.Phone || null,
+                                client_name: row.Name || null,
+                                client_surname: null,
+                                client_phone: row.Phone || null,
                             })
                             .select("id")
                             .single();

@@ -1,10 +1,12 @@
-import { BookingDTO, BookingEventModel } from "./bookings";
+import { BookingDTO, BookingEventModel } from './bookings';
 
 export type LayoutContextType = {
-  buttonLabel: string;
-  setButtonLabel: (label: string) => void;
-  onButtonClick: (() => void) | null;
-  setOnButtonClick: (fn: (() => void) | null) => void;
-   selectedBooking: BookingDTO;
-   setSelectedBooking: (booking: BookingDTO) => void;
+    buttonLabel: string;
+    setButtonLabel: (label: string) => void;
+    onButtonClick: (() => void) | null;
+    setOnButtonClick: (fn: (() => void) | null) => void;
+    selectedBooking: BookingDTO | null;
+    setSelectedBooking: (booking: BookingDTO | null) => void;
+    isEditing: boolean;
+    setIsEditing: React.Dispatch<React.SetStateAction<boolean>>;
 };
