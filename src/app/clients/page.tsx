@@ -23,57 +23,45 @@ export default function ClientsPage() {
     // -------------------------------
     // Load paginated clients normally
     // -------------------------------
-    const loadClients = useCallback(
-        async (pageToLoad: number) => {
-            const from = pageToLoad * LIMIT;
-            const to = from + LIMIT - 1;
+    async function loadClients(pageToLoad: number) {
+        const res = await fetch('/api/clients/search', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ searchTerm: '' })
+        });
 
-            const { data, error, count } = await supabase.from('clients').select('*', { count: 'exact' }).range(from, to);
+        if (!res.ok) {
+            console.error('Failed to load clients');
+            return;
+        }
 
-            if (error) {
-                console.error(error);
-                return;
-            }
-
-            setClients(data || []);
-            setRowCount(count ?? 0);
-            setPage(pageToLoad);
-            setIsSearching(false);
-        },
-        [supabase]
-    );
+        const data = await res.json();
+        setClients(data);
+        setRowCount(data.length);
+        setPage(pageToLoad);
+        setIsSearching(false);
+    }
 
     // -------------------------------
     // Debounced fuzzy search (RPC)
     // -------------------------------
     const debouncedSearch = useRef(
         debounce(async (text: string) => {
-            if (!text) {
-                // Reload first page
-                loadClients(0);
-                setIsSearching(false);
+            const res = await fetch('/api/clients/search', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ searchTerm: text })
+            });
+
+            if (!res.ok) {
+                console.error('Search failed');
                 return;
             }
 
-            try {
-                const res = await fetch('/api/clients/search', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ searchTerm: text })
-                });
-
-                if (!res.ok) {
-                    throw new Error('Failed to fetch clients');
-                }
-
-                const data: ClientType[] = await res.json();
-
-                setClients(data);
-                setRowCount(data.length);
-                setIsSearching(true);
-            } catch (error) {
-                console.error(error);
-            }
+            const data = await res.json();
+            setClients(data);
+            setRowCount(data.length);
+            setIsSearching(!!text);
         }, 300)
     ).current;
     function handleSearch(text: string) {
@@ -90,10 +78,14 @@ export default function ClientsPage() {
     // Delete client
     // -------------------------------
     async function handleDelete(id: string) {
-        const { error } = await supabase.from('clients').delete().eq('id', id);
+        const res = await fetch('/api/clients/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id })
+        });
 
-        if (error) {
-            console.error(error);
+        if (!res.ok) {
+            console.error('Failed to delete client');
             return;
         }
 
