@@ -14,6 +14,7 @@ export async function GET(req: Request) {
     .from("therapists")
     .select("id")
     .eq("id", user_id)
+    .is("deleted_at", null) // Only consider non-deleted therapists
     .single();
 
   if (error && error.code !== "PGRST116") {

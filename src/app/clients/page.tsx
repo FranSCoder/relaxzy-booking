@@ -1,10 +1,9 @@
 'use client';
 
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import { createClient } from '@/utils/supabase/client';
 import debounce from 'lodash.debounce';
-import { clients as ClientType } from '@prisma/client';
-import { TextField, Stack, Paper, Container } from '@mui/material';
+import { clients as ClientType } from 'generated/prisma/client';
+import { TextField, Stack, Paper, Container, Tooltip } from '@mui/material';
 import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -12,7 +11,6 @@ import DeleteIcon from '@mui/icons-material/Delete';
 const LIMIT = 100;
 
 export default function ClientsPage() {
-    const supabase = useMemo(() => createClient(), []);
 
     const [clients, setClients] = useState<ClientType[]>([]);
     const [page, setPage] = useState(0);
@@ -72,7 +70,7 @@ export default function ClientsPage() {
     // Load initial page
     useEffect(() => {
         loadClients(0);
-    }, [loadClients]);
+    }, []);
 
     // -------------------------------
     // Delete client
@@ -98,27 +96,26 @@ export default function ClientsPage() {
     // Columns for DataGrid
     // -------------------------------
     const columns: GridColDef[] = [
-        { field: 'name', headerName: 'Name', flex: 1 },
-        { field: 'surname', headerName: 'Surname', flex: 1 },
-        { field: 'email', headerName: 'Email', flex: 1 },
-        { field: 'phone', headerName: 'Phone', flex: 1 },
-        { field: 'notes', headerName: 'Notes', flex: 1 },
+        { field: 'client_name', headerName: 'Name', flex: 1 },
+        { field: 'client_surname', headerName: 'Surname', flex: 1 },
+        { field: 'client_email', headerName: 'Email', flex: 1 },
+        { field: 'client_phone', headerName: 'Phone', flex: 1 },
+        { field: 'client_notes', headerName: 'Notes', flex: 1 },
 
         // Actions column
         {
             field: 'actions',
             type: 'actions',
             headerName: 'Actions',
-            width: 110,
             getActions: (params) => [
                 <GridActionsCellItem
-                    icon={<EditIcon color='primary' />}
+                    icon={<Tooltip title="Edit"><EditIcon color='primary' /></Tooltip>}
                     label='Edit'
                     onClick={() => console.log('Edit clicked', params.row)}
                     key='edit'
                 />,
                 <GridActionsCellItem
-                    icon={<DeleteIcon color='error' />}
+                    icon={<Tooltip title="Delete"><DeleteIcon color='error' /></Tooltip>}
                     label='Delete'
                     onClick={() => handleDelete(params.row.id)}
                     key='delete'

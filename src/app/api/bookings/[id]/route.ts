@@ -3,7 +3,6 @@ import { NextResponse } from "next/server";
 import { PROTECTED_FIELDS } from "@/constants";
 import { PROTECTED_FIELDS_FOR_EDIT_BOOKING } from "@/constants";
 
-
 export async function PUT(req: Request, context: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await context.params;
@@ -17,7 +16,7 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
     let service_id: string | null = null;
 
     // ---------------------------------------------------
-    // 1. RESOLVER service_id A PARTIR DE service_name O short_service_name
+    // 1. RESOLVE service_id from service_name or short_service_name
     // ---------------------------------------------------
     if (body.service_name || body.short_service_name) {
       const service = await prisma.services.findFirst({
@@ -40,7 +39,7 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
     }
 
     // ---------------------------------------------------
-    // 2. BUILD SAFEDATA ONLY WITH VALID COLUMNS OF BOOKINGS
+    // 2. BUILD safedata only with allowed fields
     // ---------------------------------------------------
     const allowedFields = new Set([
       "client_id",
@@ -63,7 +62,6 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
       }
     }
 
-    // Si hemos resuelto service_id, lo insertamos en safeData
     if (service_id) {
       safeData.service_id = service_id;
     }
@@ -71,10 +69,13 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
     console.log("SAFEDATA SENT TO DB:", safeData);
 
     // ---------------------------------------------------
-    // 3. UPDATE booking
+    // 3. UPDATE only if booking is NOT deleted
     // ---------------------------------------------------
     const updated = await prisma.bookings.update({
-      where: { id },
+      where: { 
+        id,
+        deleted_at: null,   // <----- IMPORTANT
+      },
       data: {
         ...safeData,
         updated_at: new Date(),
@@ -87,7 +88,7 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
     console.error("PUT /bookings/[id] error:", error);
 
     if (error.code === "P2025") {
-      return NextResponse.json({ error: "Booking not found" }, { status: 404 });
+      return NextResponse.json({ error: "Booking not found or already deleted" }, { status: 404 });
     }
 
     return NextResponse.json(
@@ -99,26 +100,33 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
 
 export async function DELETE(_req: Request, context: { params: Promise<{ id: string }> }) {
   try {
-    const {id} = await context.params;
+    const { id } = await context.params;
 
     if (!id || typeof id !== "string") {
       return NextResponse.json({ error: "Invalid booking ID" }, { status: 400 });
     }
 
-    const deleted = await prisma.bookings.delete({
-      where: { id },
+    // ---------------------------------------------------
+    // SOFT DELETE: update deleted_at instead of delete()
+    // ---------------------------------------------------
+    const deleted = await prisma.bookings.update({
+      where: {
+        id,
+        deleted_at: null,  // only delete if not already deleted
+      },
+      data: {
+        deleted_at: new Date(),
+      },
     });
 
-    // Here you can trigger a log into bookings_history if you want
-    // await prisma.bookings_history.create({ data: {...} });
-
     return NextResponse.json(deleted, { status: 200 });
+
   } catch (error: any) {
     console.error("DELETE /bookings/[id] error:", error);
 
     if (error.code === "P2025") {
       return NextResponse.json(
-        { error: "Booking not found" },
+        { error: "Booking not found or already deleted" },
         { status: 404 }
       );
     }

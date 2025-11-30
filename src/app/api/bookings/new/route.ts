@@ -17,53 +17,81 @@ export async function POST(request: Request) {
     const body: Body = await request.json();
 
     if (!body.start_time) {
-      return NextResponse.json({ error: 'Missing start_time' }, { status: 400 });
+      return NextResponse.json({ error: "Missing start_time" }, { status: 400 });
     }
 
     if (!body.service_name) {
-      return NextResponse.json({ error: 'Missing service_name' }, { status: 400 });
+      return NextResponse.json({ error: "Missing service_name" }, { status: 400 });
     }
 
-    // 1) find or create client
+    // ------------------------------------------------------
+    // 1) FIND OR CREATE CLIENT (only active clients)
+    // ------------------------------------------------------
     let client;
+
     if (body.client_email) {
-      client = await prisma.clients.findFirst({ where: { client_email: body.client_email } });
+      client = await prisma.clients.findFirst({
+        where: { client_email: body.client_email, deleted_at: null },
+      });
     }
+
     if (!client && body.client_phone) {
-      client = await prisma.clients.findFirst({ where: { client_phone: body.client_phone } });
+      client = await prisma.clients.findFirst({
+        where: { client_phone: body.client_phone, deleted_at: null },
+      });
     }
+
     if (!client) {
-      const client_name = body.client_name ?? '';
-      const client_surname = body.client_surname ?? '';
-      client = await prisma.clients.create({ data: { client_name: client_name || null, client_surname: client_surname || null, client_email: body.client_email ?? null, client_phone: body.client_phone ?? null } });
+      const client_name = body.client_name ?? "";
+      const client_surname = body.client_surname ?? "";
+
+      client = await prisma.clients.create({
+        data: {
+          client_name: client_name || null,
+          client_surname: client_surname || null,
+          client_email: body.client_email ?? null,
+          client_phone: body.client_phone ?? null,
+        },
+      });
     }
 
-    // 2) find service
-    const service = await prisma.services.findFirst({ where: { name: body.service_name } });
+    // ------------------------------------------------------
+    // 2) FIND SERVICE (only active)
+    // ------------------------------------------------------
+    const service = await prisma.services.findFirst({
+      where: { name: body.service_name, deleted_at: null },
+    });
+
     if (!service) {
-      return NextResponse.json({ error: 'Service not found' }, { status: 400 });
+      return NextResponse.json({ error: "Service not found" }, { status: 400 });
     }
 
-    // 3) compute end_time using duration (minutes) from body or service.duration
+    // ------------------------------------------------------
+    // 3) COMPUTE END TIME
+    // ------------------------------------------------------
     const start = new Date(body.start_time);
     if (Number.isNaN(start.getTime())) {
-      return NextResponse.json({ error: 'Invalid start_time' }, { status: 400 });
+      return NextResponse.json({ error: "Invalid start_time" }, { status: 400 });
     }
 
     let durationMinutes = 0;
+
     if (body.duration) {
       durationMinutes = parseInt(String(body.duration), 10) || 0;
     }
+
     if (!durationMinutes && service.duration != null) {
-      // service.duration may be Decimal or number
       const sd = service.duration;
       durationMinutes = sd != null ? parseInt(String(sd), 10) : 0;
     }
+
     if (!durationMinutes) durationMinutes = 60;
 
     const end = new Date(start.getTime() + durationMinutes * 60 * 1000);
 
-    // 4) create booking
+    // ------------------------------------------------------
+    // 4) CREATE BOOKING
+    // ------------------------------------------------------
     const booking = await prisma.bookings.create({
       data: {
         client_id: client.id,
@@ -71,13 +99,16 @@ export async function POST(request: Request) {
         start_time: start,
         end_time: end,
         notes: body.notes ?? null,
-        status: 'confirmed',
+        status: "confirmed",
       },
     });
 
     return NextResponse.json({ booking });
   } catch (err) {
-    console.error('Create booking error', err);
-    return NextResponse.json({ error: 'Error creating booking' }, { status: 500 });
+    console.error("Create booking error", err);
+    return NextResponse.json(
+      { error: "Error creating booking" },
+      { status: 500 }
+    );
   }
 }

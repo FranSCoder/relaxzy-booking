@@ -1,7 +1,38 @@
 import { prisma } from "@/lib/prisma";
+import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
-  const data = await req.json();
-  const booking = await prisma.bookings.create({ data });
-  return Response.json(booking);
+  try {
+    const data = await req.json();
+
+    // Optional: Validate client exists and is not deleted
+    if (data.client_id) {
+      const client = await prisma.clients.findFirst({
+        where: { id: data.client_id, deleted_at: null },
+      });
+      if (!client) {
+        return NextResponse.json({ error: "Client not found or deleted" }, { status: 400 });
+      }
+    }
+
+    // Optional: Validate service exists and is not deleted
+    if (data.service_id) {
+      const service = await prisma.services.findFirst({
+        where: { id: data.service_id, deleted_at: null },
+      });
+      if (!service) {
+        return NextResponse.json({ error: "Service not found or deleted" }, { status: 400 });
+      }
+    }
+
+    const booking = await prisma.bookings.create({ data });
+
+    return NextResponse.json(booking);
+  } catch (err: any) {
+    console.error("Error creating booking:", err);
+    return NextResponse.json(
+      { error: "Error creating booking", details: err.message },
+      { status: 500 }
+    );
+  }
 }

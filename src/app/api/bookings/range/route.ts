@@ -14,11 +14,19 @@ export async function GET(req: NextRequest) {
   try {
     const bookings = await prisma.bookings.findMany({
       where: {
-        start_time: { gte: new Date(start), lte: new Date(end) },
+        deleted_at: null, // ← only active bookings
+        start_time: {
+          gte: new Date(start),
+          lte: new Date(end),
+        },
       },
       include: {
-        clients: true,
-        services: true,
+        clients: {
+          where: { deleted_at: null }, // ← only active clients
+        },
+        services: {
+          where: { deleted_at: null }, // ← only active services
+        },
       },
       orderBy: { start_time: "asc" },
     });

@@ -15,7 +15,6 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json();
-
   const { user_id, full_name, phone } = body;
 
   if (!user_id || !full_name || !phone) {
@@ -23,7 +22,6 @@ export async function POST(req: Request) {
   }
 
   const adminClient = createAdminClient();
-  // Obtén el usuario desde Supabase Auth
   const { data: userData, error: userError } = await adminClient.auth.admin.getUserById(user_id);
 
   if (userError || !userData?.user?.email) {
@@ -32,10 +30,22 @@ export async function POST(req: Request) {
 
   const email = userData.user.email;
 
-  // Inserta en la tabla therapists
+  // Soft-delete awareness: check if therapist already exists but is deleted
+  const { data: existing } = await supabase
+    .from("therapists")
+    .select("*")
+    .eq("id", user_id)
+    .is("deleted_at", null)
+    .single();
+
+  if (existing) {
+    return NextResponse.json({ error: "Therapist already exists" }, { status: 400 });
+  }
+
+  // Insert into therapists table
   const { error: insertError } = await supabase
     .from("therapists")
-    .insert({ id: user_id, full_name, phone, email });
+    .insert({ id: user_id, full_name, phone, email, deleted_at: null });
 
   if (insertError) {
     return NextResponse.json({ error: insertError.message }, { status: 500 });

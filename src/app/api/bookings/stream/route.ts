@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!, // Use service key for realtime access on the server
+  process.env.SUPABASE_SERVICE_ROLE_KEY!, 
   {
     auth: { persistSession: false },
   }
@@ -15,10 +15,11 @@ export async function GET(_req: NextRequest) {
   const stream = new ReadableStream({
     async start(controller) {
       const send = (event: any) => {
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`));
+        controller.enqueue(
+          encoder.encode(`data: ${JSON.stringify(event)}\n\n`)
+        );
       };
 
-      // Connect to the realtime channel for the `bookings` table
       const channel = supabase
         .channel("public:bookings-stream")
         .on(
@@ -26,9 +27,33 @@ export async function GET(_req: NextRequest) {
           { event: "*", schema: "public", table: "bookings" },
           (payload) => {
             const { eventType, new: newData, old: oldData } = payload;
-            if (eventType === "INSERT") send({ type: "INSERT", data: newData });
-            else if (eventType === "UPDATE") send({ type: "UPDATE", data: newData });
-            else if (eventType === "DELETE") send({ type: "DELETE", data: oldData });
+
+            // ------------------------------
+            // SOFT DELETE TRANSLATION LOGIC
+            // ------------------------------
+
+            // Real INSERT
+            if (eventType === "INSERT") {
+              send({ type: "INSERT", data: newData });
+              return;
+            }
+
+            // Real UPDATE
+            if (eventType === "UPDATE") {
+              // If deleted_at was set => treat as DELETE
+              if (newData?.deleted_at && !oldData?.deleted_at) {
+                send({ type: "DELETE", data: oldData });
+              } else {
+                send({ type: "UPDATE", data: newData });
+              }
+              return;
+            }
+
+            // Real DELETE (should not happen anymore but we leave it)
+            if (eventType === "DELETE") {
+              send({ type: "DELETE", data: oldData });
+              return;
+            }
           }
         )
         .subscribe((status) => {
@@ -37,16 +62,13 @@ export async function GET(_req: NextRequest) {
           }
         });
 
-      // Auto-reconnect hint for the client
       controller.enqueue(encoder.encode("retry: 5000\n\n"));
 
-      // Cleanup when client disconnects
       const close = async () => {
         await supabase.removeChannel(channel);
         controller.close();
       };
 
-      // Abort if connection closes
       _req.signal.addEventListener("abort", close);
     },
   });

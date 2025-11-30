@@ -1,25 +1,30 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-// /api/bookings
+// /api/bookings/all
 export async function GET() {
   try {
-    // Fetch all bookings including client and service, without therapist
     const bookings = await prisma.bookings.findMany({
+      where: {
+        deleted_at: null, // ⬅️ Only active bookings
+      },
       include: {
-        clients: true,
-        services: true,
+        clients: {
+          where: { deleted_at: null }, // ⬅️ Only active clients
+        },
+        services: {
+          where: { deleted_at: null }, // ⬅️ Only active services
+        },
       },
       orderBy: {
         start_time: "asc",
       },
     });
 
-    // Format data to match BookingWithDetailsDTO
     const formatted = bookings.map((b) => ({
       id: b.id,
       client_name: b.clients?.client_name ?? "Unknown",
-      client_surname: b.clients?.client_surname,
+      client_surname: b.clients?.client_surname ?? null,
       service_name: b.services?.name ?? "Unknown",
       start_time: b.start_time,
       end_time: b.end_time,

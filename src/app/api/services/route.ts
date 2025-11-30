@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 export async function GET() {
   try {
     const services = await prisma.services.findMany({
+      where: { deleted_at: null }, // soft-delete filter
       orderBy: {
         name: "asc",
       },
